@@ -1,0 +1,126 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="csrf-token" content="{{ csrf_token }}" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcat icon" href="{% static 'images/logo.png' %}" />
+    <title>{% block title %}{% endblock %} | Meddy Stationery</title>
+    <link href="{% static 'fontawesome-6.2.1/css/all.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'scss/custom.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'css/master.css' %}" rel="stylesheet" type="text/css" />
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    <!-- Preloader Container -->
+    <div id="preloader-wrapper">
+        <div class="loader-notebook">
+            <div class="notebook-div"></div>
+        </div>
+        <div class="preloading-text">Loading</div>
+    </div>
+    
+    <!-- Header -->
+    <header class="header">
+        <button class="sidebar-toggle" id="sidebarToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <a href="{% url 'dashboard_page' %}" class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-print"></i>
+            </div>
+            <span>Meddy Stationery</span>
+        </a>
+    </header>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <ul class="sidebar-nav">
+            <li class="nav-item">
+                <a href="{% url 'dashboard_page' %}" class="nav-link home">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'cover_page' %}" class="nav-link coverpage">
+                    <i class="fas fa-file-lines"></i>
+                    <span>Cover Page</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'passport_page' %}" class="nav-link passport">
+                    <i class="fas fa-id-badge"></i>
+                    <span>Passport</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'students_page' %}" class="nav-link students">
+                    <i class="fas fa-user-graduate"></i>
+                    <span>Students</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'programs_page' %}" class="nav-link programs">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>Programs</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'courses_page' %}" class="nav-link courses">
+                    <i class="fas fa-book-open"></i>
+                    <span>Courses</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'facilitators_page' %}" class="nav-link facilitators">
+                    <i class="fas fa-chalkboard-user"></i>
+                    <span>Facilitators</span>
+                </a>
+            </li>
+            {% comment %} <li class="nav-item">
+                <a href="#user" class="nav-link users">
+                    <i class="fas fa-users"></i>
+                    <span>Users</span>
+                </a>
+            </li> {% endcomment %}
+            <li class="nav-item">
+                <a href="{% url 'user_profile' %}" class="nav-link profile">
+                    <i class="fas fa-user"></i>
+                    <span>Profile</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'user_logout' %}" class="nav-link">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Main Content Wrapper -->
+    <div class="main-wrapper">
+        <main class="main-content" id="mainContent">
+            {% block contents %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container-fluid">
+            <p>&copy; Meddy Stationery | All rights reserved @ 2026<br>Fidon_developer | +255 713 529 019</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="{% static 'js/jquery-3.6.1.min.js' %}"></script>
+    <script src="{% static 'bootstrap-5.3.0/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

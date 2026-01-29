@@ -1,0 +1,61 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="csrf-token" content="{{ csrf_token }}" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcat icon" href="{% static 'images/logo.png' %}" />
+    <title>Login || Meddy Stationery</title>
+    <link href="{% static 'fontawesome-6.2.1/css/all.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'scss/custom.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'css/index.css' %}" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <!-- Preloader Container -->
+    <div id="preloader-wrapper">
+        <div class="loader-notebook">
+            <div class="notebook"></div>
+        </div>
+        <div class="loading-text">Loading</div>
+    </div>
+
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo">
+                <i class="fas fa-print"></i>
+            </div>
+            <h1>Meddy Stationery</h1>
+            <p>Login to continue..</p>
+        </div>
+        <div class="login-form">
+            <form id="login_form" autocomplete="off" action="{% url 'user_auth' %}">
+                <div class="form-floating formsms"></div>
+                <div class="form-floating">
+                    <input type="text" class="form-control" id="auth_username" placeholder="username" name="username" minlength="3" required autofocus>
+                    <label for="auth_username">Username</label>
+                    <i class="fas fa-user input-icon"></i>
+                </div>
+
+                <div class="form-floating">
+                    <input type="password" class="form-control" id="auth_password" placeholder="Password" name="password" required>
+                    <label for="auth_password">Password</label>
+                    <i class="fas fa-lock input-icon"></i>
+                </div>
+
+                <button type="submit" class="login-btn" id="auth_submit_button">
+                    Login <i class="fas fa-arrow-right-long"></i>
+                </button>
+            </form>
+
+            <div class="divider">
+                <span>Fidon_developer</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/jquery-3.6.1.min.js' %}"></script>
+    <script src="{% static 'bootstrap-5.3.0/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'js/index.js' %}"></script>
+</body>
+</html>

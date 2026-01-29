@@ -1,0 +1,5 @@
+.sidebar-nav .nav-link.passport {
+  background-color: var(--primary-color);
+  color: white;
+  border-left-color: var(--accent-color);
+}

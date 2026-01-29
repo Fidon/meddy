@@ -1,0 +1,36 @@
+
+// Custom Bootstrap theme with vibrant colors
+@import "../bootstrap-5.3.0/scss/functions";
+@import "../bootstrap-5.3.0/scss/variables";
+@import "../bootstrap-5.3.0/scss/mixins";
+
+// Custom color variables
+$primary: #2563EB;
+$extra: #2563EB;
+$secondary: #FBBF24;
+$accent: #EF4444;
+$background: #EDECE7;
+$text-color: #2D3748;
+
+// Merge custom colors into Bootstrap theme
+$theme-colors: map-merge($theme-colors, (
+  "primary": $primary,
+  "extra": $extra,
+  "secondary": $secondary,
+  "accent": $accent,
+  "background": $background,
+  "charcoal": $text-color,
+));
+
+// Optional utility colors if needed individually
+$custom-colors: (
+  "vibrant-blue": $primary,
+  "vibrant-blue1": $extra,
+  "normal-yellow": $secondary,
+  "accent-red": $accent,
+  "soft-cream": $background,
+  "charcoal": $text-color,
+);
+
+// Include all of Bootstrap
+@import "../bootstrap-5.3.0/scss/bootstrap";

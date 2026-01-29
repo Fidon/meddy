@@ -1,0 +1,5 @@
+Primary: Warm Blue (#2563EB),
+Secondary: Sunny Yellow (#FBBF24),
+Accent: Coral Red (#EF4444),
+Background: Cream White (#FFFBEB),
+Text: Deep Navy (#0F172A)

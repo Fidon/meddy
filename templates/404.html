@@ -1,0 +1,69 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcat icon" href="{% static 'images/logo.png' %}" />
+    <title>404 - Page Not Found | Meddy Stationery</title>
+    <link href="{% static 'scss/custom.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'fontawesome-6.2.1/css/all.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'css/404.css' %}" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <div class="container-404">
+        <!-- Floating background items -->
+        <div class="floating-items">
+            <i class="fas fa-pencil-alt stationery-item pencil"></i>
+            <i class="fas fa-pen stationery-item pen"></i>
+            <i class="fas fa-book stationery-item notebook"></i>
+            <i class="fas fa-paperclip stationery-item paperclip"></i>
+            <i class="fas fa-eraser stationery-item eraser"></i>
+        </div>
+
+        <!-- Corner decorations -->
+        <div class="corner-decoration top-left">
+            <i class="fas fa-ruler"></i>
+        </div>
+        <div class="corner-decoration top-right">
+            <i class="fas fa-highlighter"></i>
+        </div>
+        <div class="corner-decoration bottom-left">
+            <i class="fas fa-scissors"></i>
+        </div>
+        <div class="corner-decoration bottom-right">
+            <i class="fas fa-thumbtack"></i>
+        </div>
+
+        <!-- Main error content -->
+        <div class="error-content">
+            <div class="error-number">404</div>
+            
+            <div class="error-icon">
+                <div class="paper-stack">
+                    <div class="paper"></div>
+                    <div class="paper"></div>
+                    <div class="paper"></div>
+                    <div class="sad-face">📄</div>
+                </div>
+            </div>
+
+            <div class="decorative-line"></div>
+
+            <h1 class="error-title">Oops! Page Not Found</h1>
+            <p class="error-message">
+                Looks like this page went missing from our stationery! 
+                The page you're looking for might have been moved, deleted, 
+                or perhaps never existed.
+            </p>
+
+            <a href="/" class="btn-home">
+                <i class="fas fa-arrow-left"></i>
+                Back to Home
+            </a>
+        </div>
+    </div>
+    <script src="{% static 'js/jquery-3.6.1.min.js' %}"></script>
+    <script src="{% static 'bootstrap-5.3.0/js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

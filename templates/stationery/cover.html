@@ -1,0 +1,756 @@
+{% extends 'master.html' %}
+{% load static %}
+{% block title %}
+  Cover Page
+{% endblock %}
+{% block styles %}
+  <link href="{% static 'css/stationery/cover.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'css/stationery/print.css' %}" rel="stylesheet" type="text/css" media="print" />
+{% endblock %}
+{% block contents %}
+  <div class="coverpage_container">
+    <div class="inner_border">
+        <div class="heading" id="header_twologo">
+            <div class="nembo"><img src="{% static 'images/nembo.png' %}"></div>
+            <div class="heading_text">THE UNITED REPUBLIC OF TANZANIA<br>PRESIDENT’S OFFICE<br>PUBLIC SERVICE MANAGEMENT<br>TANZANIA PUBLIC SERVICE COLLEGE (TPSC)</div>
+            <div class="tpsc"><img src="{% static 'images/tpsc.png' %}"></div>
+        </div>
+        <div class="heading one_logo"  id="header_onelogo">
+            <div class="heading_text">THE UNITED REPUBLIC OF TANZANIA<br>PRESIDENT’S OFFICE<br>PUBLIC SERVICE MANAGEMENT<br>TANZANIA PUBLIC SERVICE COLLEGE (TPSC)</div>
+            <div class="tpsc"><img src="{% static 'images/tpsc.png' %}"></div>
+        </div>
+        <div class="heading no_logo"  id="header_nologo">
+            <div class="nembo"></div>
+            <div class="heading_text">THE UNITED REPUBLIC OF TANZANIA<br>PRESIDENT’S OFFICE<br>PUBLIC SERVICE MANAGEMENT<br>TANZANIA PUBLIC SERVICE COLLEGE (TPSC)</div>
+        </div>
+
+        <div class="body">
+            <div id="div_program">
+                <span class="txt">PROGRAM:</span>
+                <div class="txt_content">
+                    N/A
+                    <span data-bs-target="#edit_program_modal"><i class="fas fa-arrows-rotate"></i></span>
+                </div>
+            </div>
+            <div id="div_course">
+                <span class="txt">COURSE:</span>
+                <div class="txt_content">
+                    N/A
+                    <span data-bs-target="#edit_course_modal"><i class="fas fa-arrows-rotate"></i></span>
+                </div>
+            </div>
+            <div id="div_coursecode">
+                <span class="txt">COURSE CODE:</span>
+                <div class="txt_content">
+                    N/A
+                    <span data-bs-target="#edit_coursecode_modal"><i class="fas fa-arrows-rotate"></i></span>
+                </div>
+            </div>
+            <div id="div_class">
+                <span class="txt">CLASS:</span>
+                <div class="txt_content" data-classname="N/A">
+                    N/A
+                    <span data-bs-target="#edit_class_modal"><i class="fas fa-arrows-rotate"></i></span>
+                </div>
+            </div>
+            <div id="div_facilitator">
+                <span class="txt">FACILITATOR:</span>
+                <div class="txt_content">
+                    N/A
+                    <span data-bs-target="#edit_facilitator_modal"><i class="fas fa-arrows-rotate"></i></span>
+                </div>
+            </div>
+            <div id="div_task">
+                <span class="txt">TASK:</span>
+                <div class="txt_content">
+                    GROUP ASSIGNMENT
+                    <span data-bs-target="#edit_task_modal"><i class="fas fa-arrows-rotate"></i></span>
+                </div>
+            </div>
+            <div id="div_groupnumber">
+                <span class="txt">GROUP No:</span>
+                <div class="txt_content">
+                    0
+                    <span data-bs-target="#edit_groupno_modal"><i class="fas fa-arrows-rotate"></i></span>
+                </div>
+            </div>
+            <div id="div_submissiondate">
+                <span class="txt">SUBMISSION DATE:</span>
+                <div class="txt_content">
+                    N/A
+                    <span data-bs-target="#edit_submissiondate_modal"><i class="fas fa-arrows-rotate"></i></span>
+                </div>
+            </div>
+            <div class="individual_assignment" id="ind_studentname">
+                <span class="txt">STUDENT NAME:</span>
+                <div class="txt_content">N/A</div>
+            </div>
+            <div class="individual_assignment" id="ind_studentregno">
+                <span class="txt">REG NO:</span>
+                <div class="txt_content">N/A</div>
+            </div>
+            <div class="individual_assignment" id="ind_studentsign">
+                <span class="txt">SIGNATURE:</span>
+                <div class="txt_content">...........................</div>
+            </div>
+        </div>
+
+        <div class="table_div">
+            <table id="students_table">
+                <thead>
+                    <tr>
+                        <th>S/N</th>
+                        <th>NAMES</th>
+                        <th>REGISTRATION NUMBER</th>
+                        <th>SIGNATURES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="empty-tr">
+                        <td colspan="4">
+                            No students selected
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="question_div" id="div_question">
+            <span>Question(s):</span>
+            <div></div>
+        </div>
+    </div>
+  </div>
+
+  <div class="pagepannel">
+    <!-- Header Actions -->
+    <div class="header-actions">
+        <button class="btn-action btn-logo" id="btn_togglelogo">
+            <i class="fas fa-image"></i>
+            Logo
+        </button>
+        <button class="btn-action btn-save" id="btn_save_page">
+            <i class="fas fa-save"></i>
+            Save
+        </button>
+        <button class="btn-action btn-print" onclick="window.print()">
+            <i class="fas fa-print"></i>
+            Print
+        </button>
+    </div>
+
+    <!-- Saved Pages Section -->
+    <div class="custom-section">
+        <div class="section-header">
+            <div class="section-title">
+                <span class="section-icon"><i class="fas fa-folder-open"></i></span>
+                Saved Pages
+            </div>
+            <i class="fas fa-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-content">
+            <div class="search-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="form-control search-input" placeholder="Search pages...">
+            </div>
+            <div class="item-list pages" id="pagesList">
+                {% if pages %}
+                    {% for pg in pages %}
+                        <div class="item">
+                            <span>{{ pg.task }}</span>
+                            <i class="fas fa-trash item-delete" data-pg="{{pg.id}}"></i>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-folder-open"></i>
+                        <div>No saved pages found</div>
+                    </div>
+                {% endif %}
+            </div>
+            <!-- Pagination Section -->
+            <div class="pagination-wrapper">
+                <div class="pagination-info">
+                    <span class="text-muted">
+                        {% if pages_pagination.total_count > 0 %}
+                            Showing {{ pages_pagination.start_index }} to {{ pages_pagination.end_index }} of {{ pages_pagination.total_count }}
+                        {% else %}
+                            No pages found
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="pagination-controls">
+                    <button class="btn btn-sm btn-outline-primary pagination-btn" id="btn_prev_page" {% if not pages_pagination.has_previous %}disabled{% endif %}>
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary pagination-btn" id="btn_next_page" {% if not pages_pagination.has_next %}disabled{% endif %}>
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Select Task Section -->
+    <div class="custom-section">
+        <div class="section-header">
+            <div class="section-title">
+                <span class="section-icon"><i class="fas fa-tasks"></i></span>
+                Select Task
+            </div>
+            <i class="fas fa-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-content tasks">
+            <div class="btn-group-custom">
+                <button class="btn-sm-custom active">Group</button>
+                <button class="btn-sm-custom">Individual</button>
+                <button class="btn-sm-custom">Hide</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Select Program Section -->
+    <div class="custom-section">
+        <div class="section-header">
+            <div class="section-title">
+                <span class="section-icon"><i class="fas fa-graduation-cap"></i></span>
+                Select Program
+            </div>
+            <i class="fas fa-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-content">
+            <div class="search-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="form-control search-input" placeholder="Search programs...">
+            </div>
+            <div class="item-list programs">
+                {% if programs %}
+                    {% for program in programs %}
+                        <div class="item">
+                            <span style="display:none" class="progname" data-id="{{program.id}}">{{ program.name }}</span>
+                            <span style="display:none" class="progabbrev">{{ program.abbrev }}</span>
+                            <span>{{ program.abbrev }}: {{ program.name }}</span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-graduation-cap"></i>
+                        <div>No programs found</div>
+                    </div>
+                {% endif %}
+            </div>
+            <!-- Pagination Section -->
+            <div class="pagination-wrapper">
+                <div class="pagination-info">
+                    <span class="text-muted">
+                        {% if programs_pagination.total_count > 0 %}
+                            Showing {{ programs_pagination.start_index }} to {{ programs_pagination.end_index }} of {{ programs_pagination.total_count }}
+                        {% else %}
+                            No programs found
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="pagination-controls">
+                    <button class="btn btn-sm btn-outline-primary pagination-btn" id="btn_prev_prog" {% if not programs_pagination.has_previous %}disabled{% endif %}>
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary pagination-btn" id="btn_next_prog" {% if not programs_pagination.has_next %}disabled{% endif %}>
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Select Program Stream Section -->
+    <div class="custom-section">
+        <div class="section-header">
+            <div class="section-title">
+                <span class="section-icon"><i class="fas fa-stream"></i></span>
+                Program Stream
+            </div>
+            <i class="fas fa-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-content">
+            <div class="form-label">Select streams:</div>
+            <div class="stream-pills" id="pillsList">
+                <span class="stream-pill" data-strm="A">A</span>
+                <span class="stream-pill" data-strm="B">B</span>
+                <span class="stream-pill" data-strm="C">C</span>
+                <span class="stream-pill" data-strm="D">D</span>
+                <span class="stream-pill" data-strm="E">E</span>
+                <span class="stream-pill" data-strm="F">F</span>
+                <span class="stream-pill" data-strm="G">G</span>
+                <span class="stream-pill" data-strm="H">H</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Select Course/Subject Section -->
+    <div class="custom-section">
+        <div class="section-header">
+            <div class="section-title">
+                <span class="section-icon"><i class="fas fa-book"></i></span>
+                Select Course
+            </div>
+            <i class="fas fa-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-content">
+            <div class="search-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="form-control search-input" placeholder="Search courses...">
+            </div>
+            <div class="item-list courses">
+                {% if courses %}
+                    {% for course in courses %}
+                        <div class="item">
+                            <span style="display:none" class="coursename">{{ course.name }}</span>
+                            <span style="display:none" class="coursecode" data-id="{{course.id}}">{{ course.code }}</span>
+                            <span style="display:none" class="coursefacil">{{ course.facilitator }}</span>
+                            <span>{{ course.code }}: {{ course.name }}</span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-book"></i>
+                        <div>No courses found</div>
+                    </div>
+                {% endif %}
+            </div>
+            <!-- Pagination Section -->
+            <div class="pagination-wrapper">
+                <div class="pagination-info">
+                    <span class="text-muted">
+                        {% if courses_pagination.total_count > 0 %}
+                            Showing {{ courses_pagination.start_index }} to {{ courses_pagination.end_index }} of {{ courses_pagination.total_count }}
+                        {% else %}
+                            No courses found
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="pagination-controls">
+                    <button class="btn btn-sm btn-outline-primary pagination-btn" id="btn_prev_course" {% if not courses_pagination.has_previous %}disabled{% endif %}>
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary pagination-btn" id="btn_next_course" {% if not courses_pagination.has_next %}disabled{% endif %}>
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Select Students Section -->
+    <div class="custom-section">
+        <div class="section-header">
+            <div class="section-title">
+                <span class="section-icon"><i class="fas fa-users"></i></span>
+                Select Students
+            </div>
+            <i class="fas fa-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-content">
+            <button class="btn-sm-custom" id="btn_clear_all_students" style="width: 100%; margin-bottom: 8px;">
+                <i class="fas fa-times-circle"></i> Clear All Students
+            </button>
+            <div class="search-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="form-control search-input" placeholder="Search students...">
+            </div>
+            <div class="item-list students">
+                {% if students %}
+                    {% for student in students %}
+                        <div class="item" data-id="{{ student.id }}" data-name="{{ student.fullname }}" data-regno="{{ student.regnumber }}">
+                            <span>{{ student.fullname }} - {{ student.regnumber }}</span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <div>No students found</div>
+                    </div>
+                {% endif %}
+            </div>
+            <!-- Pagination Section -->
+            <div class="pagination-wrapper">
+                <div class="pagination-info">
+                    <span class="text-muted">
+                        {% if students_pagination.total_count > 0 %}
+                            Showing {{ students_pagination.start_index }} to {{ students_pagination.end_index }} of {{ students_pagination.total_count }}
+                        {% else %}
+                            No students found
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="pagination-controls">
+                    <button class="btn btn-sm btn-outline-primary pagination-btn" id="btn_prev_student" {% if not students_pagination.has_previous %}disabled{% endif %}>
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary pagination-btn" id="btn_next_student" {% if not students_pagination.has_next %}disabled{% endif %}>
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Number Section -->
+    <div class="custom-section">
+        <div class="section-header">
+            <div class="section-title">
+                <span class="section-icon"><i class="fas fa-hashtag"></i></span>
+                Group Number
+            </div>
+            <i class="fas fa-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-content">
+            <div class="form-group">
+                <input type="number" step="1" id="input_groupno" class="form-control" placeholder="Enter group number...">
+            </div>
+            <button class="btn-sm-custom" style="width: 100%;" id="btn_hide_groupno">
+                <i class="fas fa-eye-slash"></i> Hide Section
+            </button>
+        </div>
+    </div>
+
+    <!-- Submission Date Section -->
+    <div class="custom-section">
+        <div class="section-header">
+            <div class="section-title">
+                <span class="section-icon"><i class="fas fa-calendar"></i></span>
+                Submission Date
+            </div>
+            <i class="fas fa-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-content">
+            <div class="btn-group-custom subdate">
+                <button class="btn-sm-custom active">Show</button>
+                <button class="btn-sm-custom">Hide</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Signature Section -->
+    <div class="custom-section">
+        <div class="section-header">
+            <div class="section-title">
+                <span class="section-icon"><i class="fas fa-signature"></i></span>
+                Student Signature
+            </div>
+            <i class="fas fa-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-content">
+            <div class="btn-group-custom signatures">
+                <button class="btn-sm-custom active">Show</button>
+                <button class="btn-sm-custom">Hide</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enter Question Section -->
+    <div class="custom-section">
+        <div class="section-header">
+            <div class="section-title">
+                <span class="section-icon"><i class="fas fa-question-circle"></i></span>
+                Enter Question
+            </div>
+            <i class="fas fa-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-content">
+            <div class="btn-group-custom" style="margin-bottom: 12px;">
+                <button class="btn-sm-custom" id="newQuestionBtn">New Question</button>
+                <button class="btn-sm-custom" id="hideQuestionBtn">
+                    <i class="fas fa-eye-slash"></i> Hide Section
+                </button>
+            </div>
+            <div id="questionEditor" style="display: none;">
+                <div class="editor-toolbar">
+                    <button class="editor-btn" data-value="b"><b>B</b></button>
+                    <button class="editor-btn" data-value="i"><i>&nbsp;i</i></button>
+                    <button class="editor-btn" data-value="u"><u>U</u></button>
+                </div>
+                <div class="d-none w-100 py-1" id="qs_status_div"></div>
+                <div id="richEditor" contenteditable="true" class="form-control richtext"></div>
+                <button class="btn-sm-custom save-question" id="saveQsnBtn">
+                    <i class="fas fa-save"></i> Save Question
+                </button>
+            </div>
+            <div class="search-wrapper" style="margin-top: 12px;">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="form-control search-input" placeholder="Search saved questions...">
+            </div>
+            <div class="item-list questions" id="questionsList">
+                {% if questions %}
+                    {% for qn in questions %}
+                        <div class="item">
+                            <span>{{ qn.content|safe }}</span>
+                            <i class="fas fa-trash item-delete" data-qn="{{qn.id}}"></i>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-question-circle"></i>
+                        <div>No questions found</div>
+                    </div>
+                {% endif %}
+            </div>
+            <!-- Pagination Section -->
+            <div class="pagination-wrapper">
+                <div class="pagination-info">
+                    <span class="text-muted">
+                        {% if questions_pagination.total_count > 0 %}
+                            Showing {{ questions_pagination.start_index }} to {{ questions_pagination.end_index }} of {{ questions_pagination.total_count }}
+                        {% else %}
+                            No questions found
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="pagination-controls">
+                    <button class="btn btn-sm btn-outline-primary pagination-btn" id="btn_prev_qn" {% if not questions_pagination.has_previous %}disabled{% endif %}>
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary pagination-btn" id="btn_next_qn" {% if not questions_pagination.has_next %}disabled{% endif %}>
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+    <!-- Edit Program Modal -->
+  <div class="modal fade" id="edit_program_modal">
+    <div class="modal-dialog">
+      <form class="modal-content">
+        <div class="modal-header bg-accent text-white py-4">
+          <h5 class="modal-title">Edit program..</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body bg-white text-charcoal">
+          <div class="form-floating d-block w-100 float-start mb-2">
+            <input type="text" class="form-control" name="div_program" placeholder="p" />
+            <label class="form-label">Program name</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-accent text-white d-inline-block me-3" data-bs-dismiss="modal"><i class="fas fa-long-arrow-left"></i></button>
+          <button type="button" class="btn btn-success d-inline-block"><i class="fas fa-check"></i></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Course Modal -->
+  <div class="modal fade" id="edit_course_modal">
+    <div class="modal-dialog">
+      <form class="modal-content">
+        <div class="modal-header bg-accent text-white py-4">
+          <h5 class="modal-title">Edit course name..</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body bg-white text-charcoal">
+          <div class="form-floating d-block w-100 float-start mb-2">
+            <input type="text" class="form-control" name="div_course" placeholder="p" />
+            <label class="form-label">Course name</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-accent text-white d-inline-block me-3" data-bs-dismiss="modal"><i class="fas fa-long-arrow-left"></i></button>
+          <button type="button" class="btn btn-success d-inline-block"><i class="fas fa-check"></i></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit CourseCode Modal -->
+  <div class="modal fade" id="edit_coursecode_modal">
+    <div class="modal-dialog">
+      <form class="modal-content">
+        <div class="modal-header bg-accent text-white py-4">
+          <h5 class="modal-title">Edit course code..</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body bg-white text-charcoal">
+          <div class="form-floating d-block w-100 float-start mb-2">
+            <input type="text" class="form-control" name="div_coursecode" placeholder="p" />
+            <label class="form-label">Course code</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-accent text-white d-inline-block me-3" data-bs-dismiss="modal"><i class="fas fa-long-arrow-left"></i></button>
+          <button type="button" class="btn btn-success d-inline-block"><i class="fas fa-check"></i></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit class Modal -->
+  <div class="modal fade" id="edit_class_modal">
+    <div class="modal-dialog">
+      <form class="modal-content">
+        <div class="modal-header bg-accent text-white py-4">
+          <h5 class="modal-title">Edit class name..</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body bg-white text-charcoal">
+          <div class="form-floating d-block w-100 float-start mb-2">
+            <input type="text" class="form-control" name="div_class" placeholder="p" />
+            <label class="form-label">Class name</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-accent text-white d-inline-block me-3" data-bs-dismiss="modal"><i class="fas fa-long-arrow-left"></i></button>
+          <button type="button" class="btn btn-success d-inline-block"><i class="fas fa-check"></i></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit facilitator Modal -->
+  <div class="modal fade" id="edit_facilitator_modal">
+    <div class="modal-dialog">
+      <form class="modal-content">
+        <div class="modal-header bg-accent text-white py-4">
+          <h5 class="modal-title">Edit facilitator name..</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body bg-white text-charcoal">
+          <div class="form-floating d-block w-100 float-start mb-2">
+            <input type="text" class="form-control" name="div_facilitator" placeholder="p" />
+            <label class="form-label">Facilitator name</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-accent text-white d-inline-block me-3" data-bs-dismiss="modal"><i class="fas fa-long-arrow-left"></i></button>
+          <button type="button" class="btn btn-success d-inline-block"><i class="fas fa-check"></i></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit task Modal -->
+  <div class="modal fade" id="edit_task_modal">
+    <div class="modal-dialog">
+      <form class="modal-content">
+        <div class="modal-header bg-accent text-white py-4">
+          <h5 class="modal-title">Edit task type..</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body bg-white text-charcoal">
+          <div class="form-floating d-block w-100 float-start mb-2">
+            <input type="text" class="form-control" name="div_task" placeholder="p" />
+            <label class="form-label">Task type</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-accent text-white d-inline-block me-3" data-bs-dismiss="modal"><i class="fas fa-long-arrow-left"></i></button>
+          <button type="button" class="btn btn-success d-inline-block"><i class="fas fa-check"></i></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit groupno Modal -->
+  <div class="modal fade" id="edit_groupno_modal">
+    <div class="modal-dialog">
+      <form class="modal-content">
+        <div class="modal-header bg-accent text-white py-4">
+          <h5 class="modal-title">Edit group number..</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body bg-white text-charcoal">
+          <div class="form-floating d-block w-100 float-start mb-2">
+            <input type="number" step="1" class="form-control" name="div_groupnumber" placeholder="p" />
+            <label class="form-label">Group number</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-accent text-white d-inline-block me-3" data-bs-dismiss="modal"><i class="fas fa-long-arrow-left"></i></button>
+          <button type="button" class="btn btn-success d-inline-block"><i class="fas fa-check"></i></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit sub_date Modal -->
+  <div class="modal fade" id="edit_submissiondate_modal">
+    <div class="modal-dialog">
+      <form class="modal-content">
+        <div class="modal-header bg-accent text-white py-4">
+          <h5 class="modal-title">Edit submission date..</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body bg-white text-charcoal">
+          <div class="form-floating d-block w-100 float-start mb-2">
+            <input type="date" class="form-control" name="div_submissiondate" placeholder="p" />
+            <label class="form-label">Submission date</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-accent text-white d-inline-block me-3" data-bs-dismiss="modal"><i class="fas fa-long-arrow-left"></i></button>
+          <button type="button" class="btn btn-success d-inline-block"><i class="fas fa-check"></i></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <input type="hidden" id="cover_page_url" value="{% url 'cover_page' %}">
+  <input type="hidden" id="actions_url" value="{% url 'cover_actions' %}">
+{% endblock %}
+{% block scripts %}
+<script>
+    window.initialPaginationData = {
+        students: {
+            current_page: {{ students_pagination.current_page }},
+            total_pages: {{ students_pagination.total_pages }},
+            total_count: {{ students_pagination.total_count }},
+            per_page: {{ students_pagination.per_page }},
+            has_next: {{ students_pagination.has_next|lower }},
+            has_previous: {{ students_pagination.has_previous|lower }},
+            start_index: {{ students_pagination.start_index }},
+            end_index: {{ students_pagination.end_index }}
+        },
+        programs: {
+            current_page: {{ programs_pagination.current_page }},
+            total_pages: {{ programs_pagination.total_pages }},
+            total_count: {{ programs_pagination.total_count }},
+            per_page: {{ programs_pagination.per_page }},
+            has_next: {{ programs_pagination.has_next|lower }},
+            has_previous: {{ programs_pagination.has_previous|lower }},
+            start_index: {{ programs_pagination.start_index }},
+            end_index: {{ programs_pagination.end_index }}
+        },
+        courses: {
+            current_page: {{ courses_pagination.current_page }},
+            total_pages: {{ courses_pagination.total_pages }},
+            total_count: {{ courses_pagination.total_count }},
+            per_page: {{ courses_pagination.per_page }},
+            has_next: {{ courses_pagination.has_next|lower }},
+            has_previous: {{ courses_pagination.has_previous|lower }},
+            start_index: {{ courses_pagination.start_index }},
+            end_index: {{ courses_pagination.end_index }}
+        },
+        questions: {
+            current_page: {{ questions_pagination.current_page }},
+            total_pages: {{ questions_pagination.total_pages }},
+            total_count: {{ questions_pagination.total_count }},
+            per_page: {{ questions_pagination.per_page }},
+            has_next: {{ questions_pagination.has_next|lower }},
+            has_previous: {{ questions_pagination.has_previous|lower }},
+            start_index: {{ questions_pagination.start_index }},
+            end_index: {{ questions_pagination.end_index }}
+        },
+        pages: {
+            current_page: {{ pages_pagination.current_page }},
+            total_pages: {{ pages_pagination.total_pages }},
+            total_count: {{ pages_pagination.total_count }},
+            per_page: {{ pages_pagination.per_page }},
+            has_next: {{ pages_pagination.has_next|lower }},
+            has_previous: {{ pages_pagination.has_previous|lower }},
+            start_index: {{ pages_pagination.start_index }},
+            end_index: {{ pages_pagination.end_index }}
+        }
+    };
+</script>
+  <script src="{% static 'js/stationery/cover.js' %}"></script>
+{% endblock %}
