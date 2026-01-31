@@ -16,6 +16,7 @@ from django.db import transaction
 from datetime import datetime
 
 from .models import Program
+from apps.dashboard.models import Activity
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +85,13 @@ class DataTableProcessor:
 
         paged_data = filtered_qs[start : start + length] if length > 0 else filtered_qs
 
+        if length < 0:
+            Activity.objects.create(
+                categ="program",
+                title="Programs data exported",
+                maelezo="All programs table data has been exported"
+                )
+
         return {
             "draw": draw,
             "recordsTotal": total_records,
@@ -112,6 +120,11 @@ class ProgramService:
                 return {"success": False, "sms": "Program with this abbreviation already exists."}
 
             Program.objects.create(name=name, abbrev=abbrev, comment=comment)
+            Activity.objects.create(
+                categ="program",
+                title="New program added",
+                maelezo="New program has been registered successfully"
+                )
             return {"success": True, "sms": "New program added successfully!"}
         except Exception as e:
             logger.exception("Program creation failed")
@@ -136,6 +149,12 @@ class ProgramService:
             program.abbrev = abbrev
             program.comment = comment
             program.save()
+
+            Activity.objects.create(
+                categ="program",
+                title="Program updated",
+                maelezo="Program information has been updated"
+                )
             return {"success": True, "sms": "Program updated successfully!"}
         except Program.DoesNotExist:
             return {"success": False, "sms": "Program not found."}
@@ -147,6 +166,11 @@ class ProgramService:
     def delete_by_id(program_id: int) -> Dict[str, Any]:
         try:
             Program.objects.filter(id=program_id).delete()
+            Activity.objects.create(
+                categ="program",
+                title="Program deleted",
+                maelezo="One program has been removed from system"
+                )
             return {"success": True, "sms": "Program deleted successfully!"}
         except Exception as e:
             logger.exception("Program delete failed")
@@ -193,6 +217,11 @@ class ProgramService:
                 ])
 
             success = created_count > 0 and len(failed) == 0
+            Activity.objects.create(
+                categ="program",
+                title="Multiple programs added",
+                maelezo=f"{created_count} programs has been registered"
+                )
             return {'success': success, 'sms': sms}
 
         except Exception as e:

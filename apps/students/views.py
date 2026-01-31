@@ -17,6 +17,7 @@ from datetime import datetime
 
 from .models import Student
 from apps.programs.models import Program
+from apps.dashboard.models import Activity
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +92,13 @@ class DataTableProcessor:
 
         paged_data = filtered_qs[start:start + length] if length > 0 else filtered_qs
 
+        if length < 0:
+            Activity.objects.create(
+                categ="student",
+                title="Students data exported",
+                maelezo="All students table data has been exported"
+                )
+
         return {
             "draw": draw, "recordsTotal": total_records,
             "recordsFiltered": filtered_count, "data": paged_data,
@@ -126,6 +134,11 @@ class StudentService:
                     return {"success": False, "sms": "Selected program not found."}
 
             Student.objects.create(fullname=fullname, regnumber=regnumber, program=program)
+            Activity.objects.create(
+                categ="student",
+                title="New student added",
+                maelezo="New student has been registered successfully"
+                )
             return {"success": True, "sms": "New student added successfully!"}
         except Exception as e:
             logger.exception("Student creation failed")
@@ -160,6 +173,12 @@ class StudentService:
             student.program = program
             student.save()
 
+            Activity.objects.create(
+                categ="student",
+                title="Student updated",
+                maelezo="Student information has been updated"
+                )
+
             return {"success": True, "sms": "Student updated successfully!"}
         except Student.DoesNotExist:
             return {"success": False, "sms": "Student not found."}
@@ -171,6 +190,11 @@ class StudentService:
     def delete_by_id(student_id: int) -> Dict[str, Any]:
         try:
             Student.objects.filter(id=student_id).delete()
+            Activity.objects.create(
+                categ="student",
+                title="Student deleted",
+                maelezo="One student has been removed from system"
+                )
             return {"success": True, "sms": "Student deleted successfully!"}
         except Exception as e:
             logger.exception("Student delete failed")
@@ -217,6 +241,11 @@ class StudentService:
                 ])
 
             success = created_count > 0 and len(failed) == 0
+            Activity.objects.create(
+                categ="student",
+                title="Multiple students added",
+                maelezo=f"{created_count} students has been registered"
+                )
             return {'success': success, 'sms': sms}
 
         except Exception as e:

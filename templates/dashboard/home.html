@@ -4,11 +4,123 @@
     Dashboard
 {% endblock %}
 {% block styles %}
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fraunces:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="{% static 'css/dashboard/home.css' %}" rel="stylesheet" type="text/css" />
 {% endblock %}
 {% block contents %}
-  <div class="d-flex justify-content-center text-muted align-items-center vh-100">
-    <h4>Dashboard page is under construction..</h4>
+  <div class="dashboard-container">
+    <!-- Welcome Header -->
+    <div class="welcome-header">
+      <h1>Dashboard Overview</h1>
+      <p>Hello {{ request.user.username }}, welcome back..</p>
+      <span class="date-badge">
+        <i class="fas fa-calendar-alt"></i>
+        <span id="currentDateTime"></span>
+      </span>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-user-graduate"></i></div>
+        <div class="stat-label">Total Students</div>
+        <div class="stat-value">{{students}}</div>
+      </div>
+
+      <div class="stat-card secondary-card">
+        <div class="stat-icon"><i class="fas fa-graduation-cap"></i></div>
+        <div class="stat-label">Total Programs</div>
+        <div class="stat-value">{{programs}}</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-book-open"></i></div>
+        <div class="stat-label">Total Courses</div>
+        <div class="stat-value">{{courses}}</div>
+      </div>
+
+      <div class="stat-card accent-card">
+        <div class="stat-icon"><i class="fas fa-chalkboard-user"></i></div>
+        <div class="stat-label">Total Facilitators</div>
+        <div class="stat-value">{{facilitators}}</div>
+      </div>
+    </div>
+
+    <!-- Activity Section -->
+    <div class="activity-section">
+      <div class="activity-card">
+        <div class="chart-header">
+          <h3 class="chart-title">Recent Activity</h3>
+        </div>
+
+        {% if recentActions %}
+          {% for act in recentActions %}
+            <div class="activity-item">
+              <div class="activity-icon {{act.color}}"><i class="{{act.icon}}"></i></div>
+              <div class="activity-content">
+                <h4>{{act.title}}</h4>
+                <p>{{act.info}}</p>
+                <div class="activity-time">{{ act.time|timesince }} ago</div>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="activity-item text-center text-muted py-5">
+            No recent activities recorded
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="activity-card">
+        <div class="chart-header">
+          <h3 class="chart-title">Quick Actions</h3>
+        </div>
+
+        <div class="quick-actions">
+          <a href="{% url 'cover_page' %}" class="action-btn">
+            <div class="action-icon"><i class="fas fa-plus-circle"></i></div>
+            <div class="action-text">
+              <h4>Create Cover Page</h4>
+              <p>Generate new assignment cover</p>
+            </div>
+          </a>
+
+          <a href="{% url 'students_page' %}" class="action-btn">
+            <div class="action-icon"><i class="fas fa-user-plus"></i></div>
+            <div class="action-text">
+              <h4>Students</h4>
+              <p>Browse students</p>
+            </div>
+          </a>
+
+          <a href="{% url 'programs_page' %}" class="action-btn">
+            <div class="action-icon"><i class="fas fa-graduation-cap"></i></div>
+            <div class="action-text">
+              <h4>Programs</h4>
+              <p>Browse programs</p>
+            </div>
+          </a>
+
+          <a href="{% url 'facilitators_page' %}" class="action-btn">
+            <div class="action-icon"><i class="fas fa-graduation-cap"></i></div>
+            <div class="action-text">
+              <h4>Facilitators</h4>
+              <p>Browse facilitators</p>
+            </div>
+          </a>
+
+          <a href="{% url 'courses_page' %}" class="action-btn">
+            <div class="action-icon"><i class="fas fa-graduation-cap"></i></div>
+            <div class="action-text">
+              <h4>Courses</h4>
+              <p>Browse courses</p>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 {% endblock %}
-{% block scripts %}{% endblock %}
+{% block scripts %}
+  <script src="{% static 'js/dashboard/home.js' %}"></script>
+{% endblock %}

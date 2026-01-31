@@ -17,6 +17,7 @@ from datetime import datetime
 
 from .models import Course
 from apps.facilitators.models import Facilitator
+from apps.dashboard.models import Activity
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +120,13 @@ class DataTableProcessor:
         # ── 6. Pagination ───────────────────────────────────────────────
         page_data = filtered_qs[start : start + length] if length > 0 else filtered_qs
 
+        if length < 0:
+            Activity.objects.create(
+                categ="course",
+                title="Courses data exported",
+                maelezo="All courses table data has been exported"
+                )
+
         return {
             "draw": draw,
             "recordsTotal": total_records,
@@ -148,6 +156,11 @@ class CourseService:
                 name=name, code=code,
                 facilitator=Facilitator.objects.get(id=fac_id) if fac_id else None,
             )
+            Activity.objects.create(
+                categ="course",
+                title="New course added",
+                maelezo="New course has been registered successfully"
+                )
             return {"success": True, "sms": "Course created successfully."}
         except Exception as e:
             logger.exception("Course creation failed")
@@ -168,6 +181,12 @@ class CourseService:
             course.facilitator = Facilitator.objects.get(id=fac_id) if fac_id else None
             course.save()
 
+            Activity.objects.create(
+                categ="course",
+                title="Course updated",
+                maelezo="Course information has been updated"
+                )
+
             return {"success": True, "sms": "Course updated successfully."}
         except Course.DoesNotExist:
             return {"success": False, "sms": "Course not found."}
@@ -179,6 +198,11 @@ class CourseService:
     def delete_by_id(course_id: int) -> Dict[str, Any]:
         try:
             Course.objects.filter(id=course_id).delete()
+            Activity.objects.create(
+                categ="course",
+                title="Course deleted",
+                maelezo="One course has been removed from system"
+                )
             return {"success": True, "sms": "Course deleted successfully."}
         except Exception as e:
             logger.exception("Course delete failed")
@@ -225,6 +249,11 @@ class CourseService:
                 ])
 
             success = created_count > 0 and len(failed) == 0
+            Activity.objects.create(
+                categ="course",
+                title="Multiple courses added",
+                maelezo=f"{created_count} courses has been registered from excel sheet"
+                )
             return {'success': success, 'sms': sms}
 
         except Exception as e:

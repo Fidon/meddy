@@ -424,9 +424,11 @@ class CoverPageManager {
     if (isGroup) {
       $(".body div.individual_assignment").slideUp(300);
       $(".table_div").slideDown(300);
+      $(this.selectors.divGroupNumber).parent().slideDown(300);
     } else {
       $(".table_div").slideUp(300);
       $(".body div.individual_assignment").slideDown(300);
+      $(this.selectors.divGroupNumber).parent().slideUp(300);
     }
   }
 

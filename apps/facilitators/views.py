@@ -16,6 +16,7 @@ from django.db import transaction
 from datetime import datetime
 
 from .models import Facilitator
+from apps.dashboard.models import Activity
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +113,13 @@ class DataTableProcessor:
 
         paged_data = filtered_qs[start : start + length] if length > 0 else filtered_qs
 
+        if length < 0:
+            Activity.objects.create(
+                categ="facilitator",
+                title="Facilitators data exported",
+                maelezo="All facilitators table data has been exported"
+                )
+
         return {
             "draw": draw,
             "recordsTotal": total_records,
@@ -139,6 +147,11 @@ class FacilitatorService:
                 return {"success": False, "sms": "Facilitator with this name already exists."}
 
             Facilitator.objects.create(name=name, comment=comment)
+            Activity.objects.create(
+                categ="facilitator",
+                title="New facilitator added",
+                maelezo="New facilitator has been registered successfully"
+                )
             return {"success": True, "sms": "New facilitator added successfully!"}
         except Exception as e:
             logger.exception("Facilitator creation failed")
@@ -161,6 +174,12 @@ class FacilitatorService:
             facilitator.name = name
             facilitator.comment = comment
             facilitator.save()
+
+            Activity.objects.create(
+                categ="facilitator",
+                title="Facilitator updated",
+                maelezo="Facilitator information has been updated"
+                )
             return {"success": True, "sms": "Facilitator details updated successfully!"}
         except Facilitator.DoesNotExist:
             return {"success": False, "sms": "Facilitator not found."}
@@ -172,6 +191,11 @@ class FacilitatorService:
     def delete_by_id(facilitator_id: int) -> Dict[str, Any]:
         try:
             Facilitator.objects.filter(id=facilitator_id).delete()
+            Activity.objects.create(
+                categ="facilitator",
+                title="Facilitator deleted",
+                maelezo="One facilitator has been removed from system"
+                )
             return {"success": True, "sms": "Facilitator deleted successfully!"}
         except Exception as e:
             logger.exception("Facilitator delete failed")
@@ -208,12 +232,17 @@ class FacilitatorService:
             sms = f'Imported {created_count} facilitator(s) successfully.'
             if failed:
                 sms += '<br>'
-                sms += 'Failed failitators:<br>' + '<br>'.join([
+                sms += 'Failed facilitators:<br>' + '<br>'.join([
                     f'Row {f["row"]}: {f["reason"]}'
                     for f in failed
                 ])
 
             success = created_count > 0 and len(failed) == 0
+            Activity.objects.create(
+                categ="facilitator",
+                title="Multiple facilitators added",
+                maelezo=f"{created_count} facilitators has been registered from excel sheet"
+                )
             return {'success': success, 'sms': sms}
 
         except Exception as e:
