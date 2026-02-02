@@ -273,10 +273,12 @@ class FacilitatorService:
             
             for facil in facilitators_list:
                 Facilitator.objects.filter(id=facil).delete()
+
             Activity.objects.create(
                 categ="facilitator", title="Multiple facilitators deleted",
                 maelezo=f"{len(facilitators_list)} facilitators have been deleted from system"
                 )
+            
             return {"success": True, "sms": f"{len(facilitators_list)} facilitators deleted successfully."}
                 
         except Exception as e:
@@ -295,17 +297,13 @@ def facilitators_page(request: HttpRequest) -> HttpResponse:
         qs = Facilitator.objects.annotate(courses_count=Count("course")).all()
 
         column_filter_fields = {
-            0: "id",
-            1: "name",
-            2: "courses_count",
-            3: "comment",
+            2: "name",
+            3: "courses_count",
+            4: "comment",
         }
         column_sort_fields = column_filter_fields.copy()
         column_filter_types = {
-            "id": "exact",
-            "name": "contains",
             "courses_count": "numeric",
-            "comment": "contains",
         }
 
         result = DataTableProcessor.process_request(

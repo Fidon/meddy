@@ -328,10 +328,12 @@ class StudentService:
             # transfer students
             students_updated = studentsList.update(program=endProg)
 
-            Activity.objects.create(
-                categ="student", title="Multiple students transfered",
-                maelezo=f"{students_updated} students have been transfered to new program"
-                )
+            if students_updated > 0:
+                Activity.objects.create(
+                    categ="student", title="Multiple students transfered",
+                    maelezo=f"{students_updated} students have been transfered to new program"
+                    )
+                
             return {"success": True, "sms": f"{students_updated} students transfered successfully."}
                 
         except Exception as e:
@@ -352,7 +354,7 @@ def students_page(request: HttpRequest) -> HttpResponse:
                 'program__abbrev', Value(': '), 'program__name', output_field=CharField()
                 )).all()
 
-        column_filter_fields = {1: "fullname", 2: "regnumber", 3: "program_display"}
+        column_filter_fields = {2: "fullname", 3: "regnumber", 4: "program_display"}
         column_sort_fields = column_filter_fields.copy()
         column_filter_types = {"fullname": "contains", "regnumber": "contains", "program_display": "contains"}
 

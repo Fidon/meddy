@@ -108,9 +108,9 @@ class DataTableProcessor:
         # ── 5. Sorting ──────────────────────────────────────────────────
         order_column_idx = int(request.POST.get("order[0][column]", 1))
         order_direction = request.POST.get("order[0][dir]", "asc")
-        sort_field = column_sort_fields.get(order_column_idx, "created_at")
+        sort_field = column_sort_fields.get(order_column_idx, "name")
 
-        if sort_field == "created_at":
+        if sort_field == "name":
             order_by_expr = f"-{sort_field}" if order_direction == "desc" else sort_field
         else:
             order_by_expr = Lower(sort_field).desc() if order_direction == "desc" else Lower(sort_field).asc()
@@ -273,7 +273,7 @@ class CourseService:
             if delete_type == "all":
                 get_all = Course.objects.all()
                 if len(get_all) == 0:
-                    return {"success": False, "sms": "No students available to delete."}
+                    return {"success": False, "sms": "No courses available to delete."}
                 
                 get_all.delete()
                 Activity.objects.create(
@@ -284,10 +284,12 @@ class CourseService:
             
             for course in courses_list:
                 Course.objects.filter(id=course).delete()
+
             Activity.objects.create(
                 categ="course", title="Multiple courses deleted",
                 maelezo=f"{len(courses_list)} courses have been deleted from system"
                 )
+            
             return {"success": True, "sms": f"{len(courses_list)} courses deleted successfully."}
                 
         except Exception as e:
@@ -336,10 +338,12 @@ class CourseService:
             # transfer courses
             courses_updated = coursesList.update(facilitator=endFacil)
 
-            Activity.objects.create(
-                categ="course", title="Multiple courses transfered",
-                maelezo=f"{courses_updated} courses have been transfered to new facilitator"
-                )
+            if courses_updated > 0:
+                Activity.objects.create(
+                    categ="course", title="Multiple courses transfered",
+                    maelezo=f"{courses_updated} courses have been transfered to new facilitator"
+                    )
+
             return {"success": True, "sms": f"{courses_updated} courses transfered successfully."}
                 
         except Exception as e:
@@ -356,15 +360,15 @@ def courses_page(request: HttpRequest) -> HttpResponse:
         base_qs = Course.objects.select_related("facilitator").all()
 
         column_filter_fields = {
-            1: "name",
-            2: "code",
-            3: "facilitator__id",
+            2: "name",
+            3: "code",
+            4: "facilitator__id",
         }
 
         column_sort_fields = {
-            1: "name",
-            2: "code",
-            3: "facilitator__name",
+            2: "name",
+            3: "code",
+            4: "facilitator__name",
         }
 
         column_filter_types = {

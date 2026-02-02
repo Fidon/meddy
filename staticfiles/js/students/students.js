@@ -189,7 +189,7 @@ class StudentsManager {
         formSms.fadeOut(300, () => {
           formSms.html("").show();
         });
-      }, 3000);
+      }, 1000);
     }
   }
 
@@ -588,7 +588,7 @@ class StudentsManager {
         { data: "program" },
         { data: "action" },
       ],
-      order: [[1, "asc"]],
+      order: [[2, "asc"]],
       paging: true,
       pageLength: 10,
       lengthChange: true,
@@ -892,7 +892,15 @@ class StudentsManager {
       let sms = `<i class="fas fa-warning" style="font-size:40px"></i><br>Are you sure you want to delete all students?<br>This cannot be undone.`;
       if (checkedCount > 0)
         sms = `<i class="fas fa-warning" style="font-size:40px"></i><br>Are you sure you want to delete ${checkedCount} students?<br>This cannot be undone.`;
+
+      $(this.selectors.deleteMultipleModal)
+        .find(".warningTxt")
+        .removeClass("text-success")
+        .addClass("text-danger");
       $(this.selectors.deleteMultipleModal).find(".warningTxt").html(sms);
+      $(this.selectors.confirmMultipleDelete)
+        .removeClass("d-none")
+        .addClass("d-inline-block");
       $(this.selectors.deleteMultipleModal).modal("show");
     });
 
@@ -956,10 +964,23 @@ class StudentsManager {
       success: (response) => {
         this.allow_bulk_delete = true;
         submitBtn.html("Delete");
-        $(".student-checkbox").prop("checked", false);
-        this.toggleDeleteButton();
-        this.displayAlert(formSms, response.success, response.sms);
-        if (response.success) this.table.draw();
+
+        if (response.success) {
+          $(this.selectors.confirmMultipleDelete)
+            .removeClass("d-inline-block")
+            .addClass("d-none");
+          $(".student-checkbox").prop("checked", false);
+          this.toggleDeleteButton();
+          let sms = `<i class="fas fa-check-circle" style="font-size:35px"></i><br><br>${response.sms}`;
+          $(this.selectors.deleteMultipleModal)
+            .find(".warningTxt")
+            .removeClass("text-danger")
+            .addClass("text-success");
+          $(this.selectors.deleteMultipleModal).find(".warningTxt").html(sms);
+          this.table.draw();
+        } else {
+          this.displayAlert(formSms, response.success, response.sms);
+        }
       },
       error: (xhr, status, error) => {
         this.allow_bulk_delete = true;

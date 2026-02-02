@@ -273,7 +273,7 @@ def programs_page(request: HttpRequest) -> HttpResponse:
     if request.method == "POST" and request.headers.get("X-Requested-With") == "XMLHttpRequest":
         qs = Program.objects.all()
 
-        column_filter_fields = {1: "name", 2: "abbrev", 3: "comment"}
+        column_filter_fields = {2: "name", 3: "abbrev", 4: "comment"}
         column_sort_fields = column_filter_fields.copy()
         column_filter_types = { "name": "contains", "abbrev": "contains", "comment": "contains"}
 
