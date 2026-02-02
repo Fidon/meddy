@@ -238,17 +238,51 @@ class FacilitatorService:
                 ])
 
             success = created_count > 0 and len(failed) == 0
-            Activity.objects.create(
-                categ="facilitator",
-                title="Multiple facilitators added",
-                maelezo=f"{created_count} facilitators has been registered from excel sheet"
-                )
+            
+            if created_count > 0:
+                Activity.objects.create(
+                    categ="facilitator",
+                    title="Multiple facilitators added",
+                    maelezo=f"{created_count} facilitators has been registered from excel sheet"
+                    )
+                
             return {'success': success, 'sms': sms}
 
         except Exception as e:
             logger.exception("Facilitators import failed")
             return {'success': False, 'sms': f'Error processing file: {str(e)}'}
 
+    @staticmethod
+    def delete_multiple(data: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            facils = data.get("facilitators_list", "")
+            facilitators_list = [int(x) for x in facils.split(",") if x.strip()]
+            delete_type = data.get("delete_type")
+            
+            if delete_type == "all":
+                get_all = Facilitator.objects.all()
+                if len(get_all) == 0:
+                    return {"success": False, "sms": "No facilitators available to delete."}
+                
+                get_all.delete()
+                Activity.objects.create(
+                    categ="facilitator", title="All facilitators deleted",
+                    maelezo="All facilitators have been erased from system"
+                    )
+                return {"success": True, "sms": "All facilitators deleted successfully."}
+            
+            for facil in facilitators_list:
+                Facilitator.objects.filter(id=facil).delete()
+            Activity.objects.create(
+                categ="facilitator", title="Multiple facilitators deleted",
+                maelezo=f"{len(facilitators_list)} facilitators have been deleted from system"
+                )
+            return {"success": True, "sms": f"{len(facilitators_list)} facilitators deleted successfully."}
+                
+        except Exception as e:
+            logger.exception("Facilitator delete failed")
+            return {"success": False, "sms": "Operation failed."}
+        
 
 # =============================================================================
 # Views
@@ -340,9 +374,12 @@ def facilitators_actions(request: HttpRequest) -> JsonResponse:
     post_data = request.POST
     fac_id = post_data.get("facilitator_id")
     delete_id = post_data.get("delete_id")
+    delete_type = post_data.get("delete_type")
 
     if delete_id:
         return JsonResponse(FacilitatorService.delete_by_id(delete_id))
     if fac_id:
         return JsonResponse(FacilitatorService.update_from_post(int(fac_id), post_data))
+    if delete_type:
+        return JsonResponse(FacilitatorService.delete_multiple(post_data))
     return JsonResponse(FacilitatorService.create_from_post(post_data))

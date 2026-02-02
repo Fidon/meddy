@@ -1,10 +1,11 @@
 class FacilitatorsManager {
   constructor() {
     this.config = {
-      columnIndices: [0, 1, 2, 3, 4],
-      dateCache: { start: null, end: null },
+      columnIndices: [0, 1, 2, 3, 4, 5],
       csrfToken: this.getCSRFToken(),
     };
+
+    this.allow_bulk_delete = true;
 
     this.selectors = {
       newFacilitatorForm: "#new_facilitator_form",
@@ -15,6 +16,7 @@ class FacilitatorsManager {
       deleteFacilitatorModal: "#delete_facilitator_modal",
       searchField: "#search_facilitator_field",
       facilitatorsPageUrl: "#facilitators_page_url",
+      deleteMultipleModal: "#delete_all_facilitators",
 
       // Form fields
       facilitatorNames: "#facilitator_names",
@@ -38,6 +40,9 @@ class FacilitatorsManager {
       filterClearBtn: "#facilitators_filter_clear",
       facilitatorEditBtn: "#facilitator_edit_btn",
       facilitatorDeleteBtn: "#facilitator_delete_btn",
+      selectAllCheckbox: "#select-all",
+      deleteSelectedBtn: "#delete_selected_btn",
+      confirmMultipleDelete: "#btn_confirm_multiple_delete",
     };
 
     this.table = null;
@@ -98,6 +103,20 @@ class FacilitatorsManager {
     `;
   }
 
+  /** Display alert messages */
+  displayAlert(formSms, isSuccess, message) {
+    const feedback = this.generateAlert(isSuccess, message);
+    formSms.html(feedback);
+
+    if (isSuccess) {
+      setTimeout(() => {
+        formSms.fadeOut(300, () => {
+          formSms.html("").show();
+        });
+      }, 3000);
+    }
+  }
+
   /**
    * Setup all event handlers
    */
@@ -107,6 +126,7 @@ class FacilitatorsManager {
     this.setupEditFacilitatorForm();
     this.setupDeleteFacilitatorForm();
     this.setupSearchAndFilters();
+    this.setupBulkDelete();
 
     // Toggle between Single and Multi facilitators form
     $(this.selectors.modeToggle).change((e) => {
@@ -166,8 +186,7 @@ class FacilitatorsManager {
       success: (response) => {
         submitBtn.html("Add").attr("type", "submit");
 
-        const feedback = this.generateAlert(response.success, response.sms);
-        formSms.html(feedback);
+        this.displayAlert(formSms, response.success, response.sms);
 
         if (response.success) {
           $(this.selectors.newFacilitatorForm)[0].reset();
@@ -176,17 +195,17 @@ class FacilitatorsManager {
       },
       error: (xhr, status, error) => {
         submitBtn.html("Add").attr("type", "submit");
-        let feedback = this.generateAlert(false, "Server error.");
+        let message = "Server error.";
 
         if (status === "timeout") {
-          feedback = this.generateAlert(false, "Request timed out.");
+          message = "Request timed out.";
         } else if (xhr.status === 0) {
-          feedback = this.generateAlert(false, "No internet connection.");
+          message = "No internet connection.";
         } else {
           console.log("Server error:", xhr.status);
         }
 
-        formSms.html(feedback);
+        this.displayAlert(formSms, false, message);
       },
     });
   }
@@ -228,14 +247,13 @@ class FacilitatorsManager {
       },
       success: (response) => {
         submitBtn.html("Upload").attr("type", "submit");
-        const feedback = this.generateAlert(response.success, response.sms);
-        formSms.html(feedback);
+        this.displayAlert(formSms, response.success, response.sms);
         form[0].reset();
         this.table.draw();
       },
       error: () => {
         submitBtn.html("Upload").attr("type", "submit");
-        formSms.html(this.generateAlert(false, "Server error during upload."));
+        this.displayAlert(formSms, false, "Server error during upload.");
       },
     });
   }
@@ -285,8 +303,7 @@ class FacilitatorsManager {
       success: (response) => {
         submitBtn.html("Update").attr("type", "submit");
 
-        const feedback = this.generateAlert(response.success, response.sms);
-        formSms.html(feedback);
+        this.displayAlert(formSms, response.success, response.sms);
 
         if (response.success) {
           this.table.draw();
@@ -294,17 +311,17 @@ class FacilitatorsManager {
       },
       error: (xhr, status, error) => {
         submitBtn.html("Update").attr("type", "submit");
-        let feedback = this.generateAlert(false, "Server error.");
+        let message = "Server error.";
 
         if (status === "timeout") {
-          feedback = this.generateAlert(false, "Request timed out.");
+          message = "Request timed out.";
         } else if (xhr.status === 0) {
-          feedback = this.generateAlert(false, "No internet connection.");
+          message = "No internet connection.";
         } else {
           console.log("Server error:", xhr.status);
         }
 
-        formSms.html(feedback);
+        this.displayAlert(formSms, false, message);
       },
     });
   }
@@ -353,8 +370,7 @@ class FacilitatorsManager {
       success: (response) => {
         submitBtn.html("Yes").attr("type", "submit");
 
-        const feedback = this.generateAlert(response.success, response.sms);
-        formSms.html(feedback);
+        this.displayAlert(formSms, response.success, response.sms);
 
         if (response.success) {
           $(this.selectors.facilitatorDelId).val("");
@@ -363,17 +379,17 @@ class FacilitatorsManager {
       },
       error: (xhr, status, error) => {
         submitBtn.html("Yes").attr("type", "submit");
-        let feedback = this.generateAlert(false, "Server error.");
+        let message = "Server error.";
 
         if (status === "timeout") {
-          feedback = this.generateAlert(false, "Request timed out.");
+          message = "Request timed out.";
         } else if (xhr.status === 0) {
-          feedback = this.generateAlert(false, "No internet connection.");
+          message = "No internet connection.";
         } else {
           console.log("Server error:", xhr.status);
         }
 
-        formSms.html(feedback);
+        this.displayAlert(formSms, false, message);
       },
     });
   }
@@ -417,6 +433,7 @@ class FacilitatorsManager {
         headers: { "X-CSRFToken": this.config.csrfToken },
       },
       columns: [
+        { data: null },
         { data: "count" },
         { data: "name" },
         { data: "courses" },
@@ -434,19 +451,28 @@ class FacilitatorsManager {
       orderCellsTop: true,
       columnDefs: [
         {
-          targets: [0, 4],
+          targets: [0, 1, 5],
           orderable: false,
           className: "text-center",
         },
         {
-          targets: 4,
+          targets: 0,
+          createdCell: (cell, cellData, rowData, rowIndex, colIndex) => {
+            const checkbox = `<input type="checkbox" id="facil-${rowData.id}" class="facil-checkbox" value="${rowData.id}" />
+            <label for="facil-${rowData.id}"></label>`;
+            $(cell).html(checkbox);
+            $(cell).css("width", "30px");
+          },
+        },
+        {
+          targets: 5,
           createdCell: (cell, cellData, rowData, rowIndex, colIndex) => {
             const btn = `<button class="btn btn-sm btn-primary text-white me-1" onclick="fill_edit_form(${rowIndex}, ${rowData.id}, 'edit')"><i class="fas fa-rotate"></i></button> <button class="btn btn-sm btn-accent text-white" onclick="fill_edit_form('', ${rowData.id}, 'del')"><i class="fas fa-trash"></i></button>`;
             $(cell).html(btn);
           },
         },
         {
-          targets: [1, 2, 3],
+          targets: [2, 3, 4],
           className: "text-start text-nowrap ellipsis",
         },
       ],
@@ -476,7 +502,7 @@ class FacilitatorsManager {
     const baseConfig = {
       className: "btn btn-extra text-white",
       title: "Facilitators - Meddy Stationery",
-      exportOptions: { columns: [0, 1, 2, 3] },
+      exportOptions: { columns: [1, 2, 3, 4] },
       action: this.getExportAction(),
     };
 
@@ -648,7 +674,7 @@ class FacilitatorsManager {
         );
         $(cell).addClass("bg-white");
 
-        if (colIdx === 0 || colIdx === 4) {
+        if (colIdx === 0 || colIdx === 1 || colIdx === 5) {
           cell.html("");
         } else {
           $(cell).html(
@@ -682,6 +708,118 @@ class FacilitatorsManager {
         .draw();
 
       $(this).focus()[0].setSelectionRange(cursorPosition, cursorPosition);
+    });
+  }
+
+  /**
+   * Setup bulk delete functionality
+   */
+  setupBulkDelete() {
+    // Select all checkbox
+    $(document).on("change", this.selectors.selectAllCheckbox, () => {
+      const isChecked = $(this.selectors.selectAllCheckbox).is(":checked");
+      $(".facil-checkbox").prop("checked", isChecked);
+      this.toggleDeleteButton();
+    });
+
+    // Individual checkbox
+    $(document).on("change", ".facil-checkbox", () => {
+      const total = $(".facil-checkbox").length;
+      const checked = $(".facil-checkbox:checked").length;
+      $(this.selectors.selectAllCheckbox).prop("checked", total === checked);
+      this.toggleDeleteButton();
+    });
+
+    // Open modal button
+    $(this.selectors.deleteSelectedBtn).on("click", () => {
+      const checkedCount = $(".facil-checkbox:checked").length;
+      let sms = `<i class="fas fa-warning" style="font-size:40px"></i><br>Are you sure you want to delete all facilitators?<br>This cannot be undone.`;
+      if (checkedCount > 0)
+        sms = `<i class="fas fa-warning" style="font-size:40px"></i><br>Are you sure you want to delete ${checkedCount} facilitators?<br>This cannot be undone.`;
+      $(this.selectors.deleteMultipleModal).find(".warningTxt").html(sms);
+      $(this.selectors.deleteMultipleModal).modal("show");
+    });
+
+    // Confirm deleting multiple/all
+    $(this.selectors.confirmMultipleDelete).on("click", () => {
+      this.handleBulkDelete();
+    });
+  }
+
+  /**
+   * Toggle delete button state
+   */
+  toggleDeleteButton() {
+    const checkedCount = $(".facil-checkbox:checked").length;
+    const $btn = $(this.selectors.deleteSelectedBtn);
+
+    $btn.toggleClass("disabled-btn", checkedCount === 0);
+
+    if (checkedCount > 0) {
+      $btn.html(`<i class="fas fa-trash"></i> (${checkedCount})`);
+    } else {
+      $btn.html('<i class="fas fa-trash"></i>');
+    }
+  }
+
+  /**
+   * Handle bulk delete
+   */
+  handleBulkDelete() {
+    if (this.allow_bulk_delete === false) return;
+
+    this.allow_bulk_delete = false;
+    const selectedIds = $(".facil-checkbox:checked")
+      .map(function () {
+        return Number($(this).val());
+      })
+      .get();
+
+    const form = $(this.selectors.deleteFacilitatorForm);
+    const formSms = $(this.selectors.deleteMultipleModal).find(
+      ".modal-body .formsms",
+    );
+    const submitBtn = $(this.selectors.confirmMultipleDelete);
+    const checkedCount = $(".facil-checkbox:checked").length;
+    const deleteType = checkedCount === 0 ? "all" : "multiple";
+    const formData = new FormData();
+    formData.append("facilitators_list", selectedIds);
+    formData.append("delete_type", deleteType);
+
+    $.ajax({
+      type: "POST",
+      url: form.attr("action"),
+      data: formData,
+      dataType: "json",
+      contentType: false,
+      processData: false,
+      headers: { "X-CSRFToken": this.config.csrfToken },
+      beforeSend: () => {
+        submitBtn.html("<i class='fas fa-spinner fa-pulse'></i>");
+      },
+      success: (response) => {
+        this.allow_bulk_delete = true;
+        submitBtn.html("Delete");
+        $(".facil-checkbox").prop("checked", false);
+        this.toggleDeleteButton();
+        this.displayAlert(formSms, response.success, response.sms);
+        if (response.success) this.table.draw();
+      },
+      error: (xhr, status, error) => {
+        this.allow_bulk_delete = true;
+        submitBtn.html("Delete");
+        let message = "Server error.";
+
+        if (status === "timeout") {
+          message = "Request timed out.";
+        } else if (xhr.status === 0) {
+          message = "No internet connection.";
+        } else {
+          console.log("Server error:", xhr.status);
+        }
+
+        this.displayAlert(formSms, false, message);
+      },
     });
   }
 }

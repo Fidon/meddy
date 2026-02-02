@@ -1,21 +1,26 @@
 class CoursesManager {
   constructor() {
     this.config = {
-      columnIndices: [0, 1, 2, 3, 4],
+      columnIndices: [0, 1, 2, 3, 4, 5],
       dateCache: { start: null, end: null },
       csrfToken: this.getCSRFToken(),
     };
+
+    this.allow_bulk_delete = true;
 
     this.selectors = {
       newCourseForm: "#new_course_form",
       editCourseForm: "#edit_course_form",
       deleteCourseForm: "#del_course_form",
+      transferFacilForm: "#change_facil_form",
       coursesTable: "#courses_table",
       updateCourseCanvas: "#edit_course_canvas",
       newCourseCanvas: "#new_course_canvas",
+      transferFacilCanvas: "#change_facil_canvas",
       deleteCourseModal: "#delete_course_modal",
       searchField: "#search_course_field",
       coursesPageUrl: "#courses_page_url",
+      deleteMultipleModal: "#delete_all_courses",
 
       // Form fields
       courseNames: "#course_names",
@@ -26,6 +31,8 @@ class CoursesManager {
       courseEditFacilitator: "#course_edit_facilitator",
       courseId: "#edit_course_id",
       courseDelId: "#course_del_id",
+      transferFacilStart: "#change_facil_start",
+      transferFacilEnd: "#change_facil_end",
 
       excelCourseForm: "#excel_course_form",
       excelCourseBtn: "#excel_course_btn",
@@ -39,6 +46,10 @@ class CoursesManager {
       filterClearBtn: "#courses_filter_clear",
       courseEditBtn: "#course_edit_btn",
       courseDeleteBtn: "#course_delete_btn",
+      selectAllCheckbox: "#select-all",
+      deleteSelectedBtn: "#delete_selected_btn",
+      confirmMultipleDelete: "#btn_confirm_multiple_delete",
+      transferFacilBtn: "#facil_transfer_btn",
     };
 
     this.table = null;
@@ -68,39 +79,58 @@ class CoursesManager {
    * Initialize searchable selects
    */
   initializeSearchableSelects() {
-    // Initialize for new course form when offcanvas is shown
-    const newCourseOffcanvas = document.querySelector(
-      this.selectors.newCourseCanvas,
-    );
+    const offcanvasConfigs = [
+      {
+        offcanvas: this.selectors.newCourseCanvas,
+        select: this.selectors.courseFacilitator,
+        options: {
+          placeholder: "Search facilitator...",
+          allowClear: true,
+          noResultsText: "No facilitator found",
+        },
+      },
+      {
+        offcanvas: this.selectors.updateCourseCanvas,
+        select: this.selectors.courseEditFacilitator,
+        options: {
+          placeholder: "Search facilitator...",
+          allowClear: true,
+          noResultsText: "No facilitator found",
+        },
+      },
+      {
+        offcanvas: this.selectors.transferFacilCanvas,
+        select: this.selectors.transferFacilStart,
+        options: {
+          placeholder: "Search facilitator...",
+          allowClear: true,
+          noResultsText: "No facilitator found",
+        },
+      },
+      {
+        offcanvas: this.selectors.transferFacilCanvas,
+        select: this.selectors.transferFacilEnd,
+        options: {
+          placeholder: "Search facilitator...",
+          allowClear: true,
+          noResultsText: "No facilitator found",
+        },
+      },
+    ];
 
-    if (newCourseOffcanvas) {
-      newCourseOffcanvas.addEventListener("shown.bs.offcanvas", () => {
-        if (!$(this.selectors.courseFacilitator).data("searchableSelect")) {
-          $(this.selectors.courseFacilitator).searchableSelect({
-            placeholder: "Search facilitator...",
-            allowClear: true,
-            noResultsText: "No facilitator found",
-          });
-        }
-      });
-    }
+    offcanvasConfigs.forEach(({ offcanvas, select, options }) => {
+      const offcanvasElement = document.querySelector(offcanvas);
 
-    // Initialize for edit course form when offcanvas is shown
-    const editCourseOffcanvas = document.querySelector(
-      this.selectors.updateCourseCanvas,
-    );
+      if (offcanvasElement) {
+        offcanvasElement.addEventListener("shown.bs.offcanvas", () => {
+          const $select = $(select);
 
-    if (editCourseOffcanvas) {
-      editCourseOffcanvas.addEventListener("shown.bs.offcanvas", () => {
-        if (!$(this.selectors.courseEditFacilitator).data("searchableSelect")) {
-          $(this.selectors.courseEditFacilitator).searchableSelect({
-            placeholder: "Search facilitator...",
-            allowClear: true,
-            noResultsText: "No facilitator found",
-          });
-        }
-      });
-    }
+          if (!$select.data("searchableSelect")) {
+            $select.searchableSelect(options);
+          }
+        });
+      }
+    });
   }
 
   /**
@@ -111,10 +141,10 @@ class CoursesManager {
       const row = $(
         `${this.selectors.coursesTable} tbody tr:nth-child(${rowIndex + 1})`,
       );
-      const names = $("td:nth-child(2)", row).text();
-      const code = $("td:nth-child(3)", row).text();
+      const names = $("td:nth-child(3)", row).text();
+      const code = $("td:nth-child(4)", row).text();
 
-      const facilClassName = $("td:nth-child(4)", row).attr("class");
+      const facilClassName = $("td:nth-child(5)", row).attr("class");
       if (facilClassName && facilClassName.includes("facil_")) {
         const facilitatorId = facilClassName.split("facil_")[1];
         if (facilitatorId) {
@@ -151,6 +181,20 @@ class CoursesManager {
     `;
   }
 
+  /** Display alert messages */
+  displayAlert(formSms, isSuccess, message) {
+    const feedback = this.generateAlert(isSuccess, message);
+    formSms.html(feedback);
+
+    if (isSuccess) {
+      setTimeout(() => {
+        formSms.fadeOut(300, () => {
+          formSms.html("").show();
+        });
+      }, 5000);
+    }
+  }
+
   /**
    * Setup all event handlers
    */
@@ -158,8 +202,10 @@ class CoursesManager {
     this.setupNewCourseForm();
     this.setupExcelCourseForm();
     this.setupEditCourseForm();
+    this.setupFacilChangeForm();
     this.setupDeleteCourseForm();
     this.setupSearchAndFilters();
+    this.setupBulkDelete();
 
     // Toggle between Single and Multi facilitators form
     $(this.selectors.modeToggle).change((e) => {
@@ -220,8 +266,7 @@ class CoursesManager {
       success: (response) => {
         submitBtn.html("Add").attr("type", "submit");
 
-        const feedback = this.generateAlert(response.success, response.sms);
-        formSms.html(feedback);
+        this.displayAlert(formSms, response.success, response.sms);
 
         if (response.success) {
           $(this.selectors.newCourseForm)[0].reset();
@@ -231,17 +276,17 @@ class CoursesManager {
       },
       error: (xhr, status, error) => {
         submitBtn.html("Add").attr("type", "submit");
-        let feedback = this.generateAlert(false, "Server error.");
+        let message = "Server error.";
 
         if (status === "timeout") {
-          feedback = this.generateAlert(false, "Request timed out.");
+          message = "Request timed out.";
         } else if (xhr.status === 0) {
-          feedback = this.generateAlert(false, "No internet connection.");
+          message = "No internet connection.";
         } else {
           console.log("Server error:", xhr.status);
         }
 
-        formSms.html(feedback);
+        this.displayAlert(formSms, false, message);
       },
     });
   }
@@ -283,14 +328,13 @@ class CoursesManager {
       },
       success: (response) => {
         submitBtn.html("Upload").attr("type", "submit");
-        const feedback = this.generateAlert(response.success, response.sms);
-        formSms.html(feedback);
+        this.displayAlert(formSms, response.success, response.sms);
         form[0].reset();
         this.table.draw();
       },
       error: () => {
         submitBtn.html("Upload").attr("type", "submit");
-        formSms.html(this.generateAlert(false, "Server error during upload."));
+        this.displayAlert(formSms, false, "Server error during upload.");
       },
     });
   }
@@ -338,8 +382,7 @@ class CoursesManager {
       success: (response) => {
         submitBtn.html("Update").attr("type", "submit");
 
-        const feedback = this.generateAlert(response.success, response.sms);
-        formSms.html(feedback);
+        this.displayAlert(formSms, response.success, response.sms);
 
         if (response.success) {
           this.table.draw();
@@ -347,17 +390,17 @@ class CoursesManager {
       },
       error: (xhr, status, error) => {
         submitBtn.html("Update").attr("type", "submit");
-        let feedback = this.generateAlert(false, "Server error.");
+        let message = "Server error.";
 
         if (status === "timeout") {
-          feedback = this.generateAlert(false, "Request timed out.");
+          message = "Request timed out.";
         } else if (xhr.status === 0) {
-          feedback = this.generateAlert(false, "No internet connection.");
+          message = "No internet connection.";
         } else {
           console.log("Server error:", xhr.status);
         }
 
-        formSms.html(feedback);
+        this.displayAlert(formSms, false, message);
       },
     });
   }
@@ -402,8 +445,7 @@ class CoursesManager {
       success: (response) => {
         submitBtn.html("Yes").attr("type", "submit");
 
-        const feedback = this.generateAlert(response.success, response.sms);
-        formSms.html(feedback);
+        this.displayAlert(formSms, response.success, response.sms);
 
         if (response.success) {
           $(this.selectors.courseDelId).val("");
@@ -412,17 +454,96 @@ class CoursesManager {
       },
       error: (xhr, status, error) => {
         submitBtn.html("Yes").attr("type", "submit");
-        let feedback = this.generateAlert(false, "Server error.");
+        let message = "Server error.";
 
         if (status === "timeout") {
-          feedback = this.generateAlert(false, "Request timed out.");
+          message = "Request timed out.";
         } else if (xhr.status === 0) {
-          feedback = this.generateAlert(false, "No internet connection.");
+          message = "No internet connection.";
         } else {
           console.log("Server error:", xhr.status);
         }
 
-        formSms.html(feedback);
+        this.displayAlert(formSms, false, message);
+      },
+    });
+  }
+
+  /**
+   * Setup course transfer form
+   */
+  setupFacilChangeForm() {
+    $(this.selectors.transferFacilForm).submit((e) => {
+      e.preventDefault();
+      const formSms = $(`${this.selectors.transferFacilForm} .formsms`);
+      const submitBtn = $(this.selectors.transferFacilBtn);
+
+      this.handleFacilTransferSubmit(submitBtn, formSms);
+    });
+  }
+
+  /**
+   * Handle course transfer form submission
+   */
+  handleFacilTransferSubmit(submitBtn, formSms) {
+    const facilStart = $(this.selectors.transferFacilStart).val();
+    const facilEnd = $(this.selectors.transferFacilEnd).val();
+
+    if (facilStart == "" || facilEnd == "") {
+      this.displayAlert(
+        formSms,
+        false,
+        "Please select facilitator in both fields.",
+      );
+      return;
+    }
+
+    if (parseInt(facilStart) === parseInt(facilEnd)) {
+      this.displayAlert(
+        formSms,
+        false,
+        "Please select two different facilitators.",
+      );
+      return;
+    }
+
+    const form = $(this.selectors.transferFacilForm);
+    const formData = new FormData();
+    formData.append("facil_change_start", parseInt(facilStart));
+    formData.append("facil_change_end", parseInt(facilEnd));
+
+    $.ajax({
+      type: "POST",
+      url: form.attr("action"),
+      data: formData,
+      dataType: "json",
+      contentType: false,
+      processData: false,
+      headers: { "X-CSRFToken": this.config.csrfToken },
+      beforeSend: () => {
+        submitBtn
+          .html("<i class='fas fa-spinner fa-pulse'></i>")
+          .attr("type", "button");
+      },
+      success: (response) => {
+        submitBtn.html("Transfer").attr("type", "submit");
+        $(this.selectors.transferFacilForm)[0].reset();
+        this.displayAlert(formSms, response.success, response.sms);
+        if (response.success) this.table.draw();
+      },
+      error: (xhr, status, error) => {
+        submitBtn.html("Transfer").attr("type", "submit");
+        let message = "Server error.";
+
+        if (status === "timeout") {
+          message = "Request timed out.";
+        } else if (xhr.status === 0) {
+          message = "No internet connection.";
+        } else {
+          console.log("Server error:", xhr.status);
+        }
+
+        this.displayAlert(formSms, false, message);
       },
     });
   }
@@ -466,6 +587,7 @@ class CoursesManager {
         headers: { "X-CSRFToken": this.config.csrfToken },
       },
       columns: [
+        { data: null },
         { data: "count" },
         { data: "name" },
         { data: "code" },
@@ -483,26 +605,35 @@ class CoursesManager {
       orderCellsTop: true,
       columnDefs: [
         {
-          targets: [0, 4],
+          targets: [0, 1, 5],
           orderable: false,
           className: "text-center",
         },
         {
-          targets: 4,
+          targets: 0,
+          createdCell: (cell, cellData, rowData, rowIndex, colIndex) => {
+            const checkbox = `<input type="checkbox" id="course-${rowData.id}" class="course-checkbox" value="${rowData.id}" />
+            <label for="course-${rowData.id}"></label>`;
+            $(cell).html(checkbox);
+            $(cell).css("width", "30px");
+          },
+        },
+        {
+          targets: 5,
           createdCell: (cell, cellData, rowData, rowIndex, colIndex) => {
             const btn = `<button class="btn btn-sm btn-primary text-white me-1" onclick="fill_edit_form(${rowIndex}, ${rowData.id}, 'edit')"><i class="fas fa-rotate"></i></button> <button class="btn btn-sm btn-accent text-white" onclick="fill_edit_form('', ${rowData.id}, 'del')"><i class="fas fa-trash"></i></button>`;
             $(cell).html(btn);
           },
         },
         {
-          targets: 3,
+          targets: 4,
           createdCell: (cell, cellData, rowData, rowIndex, colIndex) => {
             $(cell).html(rowData.facilitator);
             $(cell).addClass("facil_" + rowData.facilitator_id);
           },
         },
         {
-          targets: [1, 2, 3],
+          targets: [2, 3, 4],
           className: "text-start text-nowrap ellipsis",
         },
       ],
@@ -532,7 +663,7 @@ class CoursesManager {
     const baseConfig = {
       className: "btn btn-extra text-white",
       title: "Courses - Meddy Stationery",
-      exportOptions: { columns: [0, 1, 2, 3] },
+      exportOptions: { columns: [1, 2, 3, 4] },
       action: this.getExportAction(),
     };
 
@@ -704,9 +835,9 @@ class CoursesManager {
         );
         $(cell).addClass("bg-white");
 
-        if (colIdx === 0 || colIdx === 4) {
+        if (colIdx === 0 || colIdx === 1 || colIdx === 5) {
           cell.html("");
-        } else if (colIdx === 3) {
+        } else if (colIdx === 4) {
           const select = document.createElement("select");
           select.className = "select-filter text-charcoal float-start";
           select.innerHTML = `<option value="">All</option>`;
@@ -753,6 +884,118 @@ class CoursesManager {
         .draw();
 
       $(this).focus()[0].setSelectionRange(cursorPosition, cursorPosition);
+    });
+  }
+
+  /**
+   * Setup bulk delete functionality
+   */
+  setupBulkDelete() {
+    // Select all checkbox
+    $(document).on("change", this.selectors.selectAllCheckbox, () => {
+      const isChecked = $(this.selectors.selectAllCheckbox).is(":checked");
+      $(".course-checkbox").prop("checked", isChecked);
+      this.toggleDeleteButton();
+    });
+
+    // Individual checkbox
+    $(document).on("change", ".course-checkbox", () => {
+      const total = $(".course-checkbox").length;
+      const checked = $(".course-checkbox:checked").length;
+      $(this.selectors.selectAllCheckbox).prop("checked", total === checked);
+      this.toggleDeleteButton();
+    });
+
+    // Open modal button
+    $(this.selectors.deleteSelectedBtn).on("click", () => {
+      const checkedCount = $(".course-checkbox:checked").length;
+      let sms = `<i class="fas fa-warning" style="font-size:40px"></i><br>Are you sure you want to delete all courses?<br>This cannot be undone.`;
+      if (checkedCount > 0)
+        sms = `<i class="fas fa-warning" style="font-size:40px"></i><br>Are you sure you want to delete ${checkedCount} courses?<br>This cannot be undone.`;
+      $(this.selectors.deleteMultipleModal).find(".warningTxt").html(sms);
+      $(this.selectors.deleteMultipleModal).modal("show");
+    });
+
+    // Confirm deleting multiple/all
+    $(this.selectors.confirmMultipleDelete).on("click", () => {
+      this.handleBulkDelete();
+    });
+  }
+
+  /**
+   * Toggle delete button state
+   */
+  toggleDeleteButton() {
+    const checkedCount = $(".course-checkbox:checked").length;
+    const $btn = $(this.selectors.deleteSelectedBtn);
+
+    $btn.toggleClass("disabled-btn", checkedCount === 0);
+
+    if (checkedCount > 0) {
+      $btn.html(`<i class="fas fa-trash"></i> (${checkedCount})`);
+    } else {
+      $btn.html('<i class="fas fa-trash"></i>');
+    }
+  }
+
+  /**
+   * Handle bulk delete
+   */
+  handleBulkDelete() {
+    if (this.allow_bulk_delete === false) return;
+
+    this.allow_bulk_delete = false;
+    const selectedIds = $(".course-checkbox:checked")
+      .map(function () {
+        return Number($(this).val());
+      })
+      .get();
+
+    const form = $(this.selectors.deleteCourseForm);
+    const formSms = $(this.selectors.deleteMultipleModal).find(
+      ".modal-body .formsms",
+    );
+    const submitBtn = $(this.selectors.confirmMultipleDelete);
+    const checkedCount = $(".course-checkbox:checked").length;
+    const deleteType = checkedCount === 0 ? "all" : "multiple";
+    const formData = new FormData();
+    formData.append("courses_list", selectedIds);
+    formData.append("delete_type", deleteType);
+
+    $.ajax({
+      type: "POST",
+      url: form.attr("action"),
+      data: formData,
+      dataType: "json",
+      contentType: false,
+      processData: false,
+      headers: { "X-CSRFToken": this.config.csrfToken },
+      beforeSend: () => {
+        submitBtn.html("<i class='fas fa-spinner fa-pulse'></i>");
+      },
+      success: (response) => {
+        this.allow_bulk_delete = true;
+        submitBtn.html("Delete");
+        $(".course-checkbox").prop("checked", false);
+        this.toggleDeleteButton();
+        this.displayAlert(formSms, response.success, response.sms);
+        if (response.success) this.table.draw();
+      },
+      error: (xhr, status, error) => {
+        this.allow_bulk_delete = true;
+        submitBtn.html("Delete");
+        let message = "Server error.";
+
+        if (status === "timeout") {
+          message = "Request timed out.";
+        } else if (xhr.status === 0) {
+          message = "No internet connection.";
+        } else {
+          console.log("Server error:", xhr.status);
+        }
+
+        this.displayAlert(formSms, false, message);
+      },
     });
   }
 }

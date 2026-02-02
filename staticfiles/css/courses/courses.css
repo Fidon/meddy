@@ -211,3 +211,64 @@
   top: 50%;
   transform: translateY(-50%);
 }
+
+/* Checkbox styling */
+.course-checkbox,
+.select-all-checkbox {
+  display: none;
+}
+
+.course-checkbox + label,
+.select-all-checkbox + label {
+  position: relative;
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #d1d5db;
+  border-radius: 5px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.course-checkbox + label:hover,
+.select-all-checkbox + label:hover {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.course-checkbox + label::after,
+.select-all-checkbox + label::after {
+  content: "✓";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+.course-checkbox:checked + label,
+.select-all-checkbox:checked + label {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  border-color: #2563eb;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.course-checkbox:checked + label::after,
+.select-all-checkbox:checked + label::after {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.course-checkbox + label:active,
+.select-all-checkbox + label:active {
+  transform: scale(0.9);
+}
+
+/* Delete button styling */
+#delete_selected_btn.disabled-btn {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

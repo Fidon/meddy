@@ -249,17 +249,102 @@ class CourseService:
                 ])
 
             success = created_count > 0 and len(failed) == 0
-            Activity.objects.create(
-                categ="course",
-                title="Multiple courses added",
-                maelezo=f"{created_count} courses has been registered from excel sheet"
-                )
+            
+            if created_count > 0:
+                Activity.objects.create(
+                    categ="course",
+                    title="Multiple courses added",
+                    maelezo=f"{created_count} courses has been registered from excel sheet"
+                    )
+
             return {'success': success, 'sms': sms}
 
         except Exception as e:
             logger.exception("Facilitators import failed")
             return {'success': False, 'sms': f'Error processing file: {str(e)}'}
         
+    @staticmethod
+    def delete_multiple(data: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            courses = data.get("courses_list", "")
+            courses_list = [int(x) for x in courses.split(",") if x.strip()]
+            delete_type = data.get("delete_type")
+            
+            if delete_type == "all":
+                get_all = Course.objects.all()
+                if len(get_all) == 0:
+                    return {"success": False, "sms": "No students available to delete."}
+                
+                get_all.delete()
+                Activity.objects.create(
+                    categ="course", title="All courses deleted",
+                    maelezo="All courses have been erased from system"
+                    )
+                return {"success": True, "sms": "All courses deleted successfully."}
+            
+            for course in courses_list:
+                Course.objects.filter(id=course).delete()
+            Activity.objects.create(
+                categ="course", title="Multiple courses deleted",
+                maelezo=f"{len(courses_list)} courses have been deleted from system"
+                )
+            return {"success": True, "sms": f"{len(courses_list)} courses deleted successfully."}
+                
+        except Exception as e:
+            logger.exception("Course delete failed")
+            return {"success": False, "sms": "Operation failed."}
+    
+    @staticmethod
+    def transfer_facilitator(data: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            facil_start = data.get("facil_change_start")
+            facil_end = data.get("facil_change_end")
+
+            # Validate that both values are provided
+            if facil_start is None or facil_end is None or facil_start == "" or facil_end == "":
+                return {"success": False, "sms": "Both facilitator must be selected"}
+            
+            # Convert to integers and validate
+            try:
+                facil_start_id  = int(facil_start)
+                facil_end_id  = int(facil_end)
+            except (ValueError, TypeError):
+                return {"success": False, "sms": "Invalid facilitator values"}
+            
+            # Check if they're the same
+            if facil_start_id == facil_end_id:
+                return {"success": False, "sms": "Please select different facilitator"}
+            
+            # Handle start facilitator (0 means null/no facilitator)
+            if facil_start_id == 0:
+                startFacil = None
+                coursesList = Course.objects.filter(facilitator__isnull=True)
+            else:
+                startFacil = Facilitator.objects.filter(id=facil_start_id).first()
+                if not startFacil:
+                    return {"success": False, "sms": "Start facilitator not found"}
+                coursesList = Course.objects.filter(facilitator=startFacil)
+
+            # Handle end facilitator (0 means null/no facilitator)
+            if facil_end_id == 0:
+                endFacil = None
+            else:
+                endFacil = Facilitator.objects.filter(id=facil_end_id).first()
+                if not endFacil:
+                    return {"success": False, "sms": "End facilitator not found"}
+
+            # transfer courses
+            courses_updated = coursesList.update(facilitator=endFacil)
+
+            Activity.objects.create(
+                categ="course", title="Multiple courses transfered",
+                maelezo=f"{courses_updated} courses have been transfered to new facilitator"
+                )
+            return {"success": True, "sms": f"{courses_updated} courses transfered successfully."}
+                
+        except Exception as e:
+            logger.exception("Course transfer failed")
+            return {"success": False, "sms": "Operation failed."}
 
 # =============================================================================
 #  Views
@@ -357,11 +442,15 @@ def courses_actions(request: HttpRequest) -> JsonResponse:
     post_data = request.POST
     course_id = post_data.get("course_id")
     delete_id = post_data.get("delete_id")
+    delete_type = post_data.get("delete_type")
+    facil_transfer = post_data.get("facil_change_start")
 
     if delete_id:
         return JsonResponse(CourseService.delete_by_id(delete_id))
-
     if course_id:
         return JsonResponse(CourseService.update_from_post(int(course_id), post_data))
-
+    if delete_type:
+        return JsonResponse(CourseService.delete_multiple(post_data))
+    if facil_transfer:
+        return JsonResponse(CourseService.transfer_facilitator(post_data))
     return JsonResponse(CourseService.create_from_post(post_data))

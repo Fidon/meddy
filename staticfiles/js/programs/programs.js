@@ -1,10 +1,11 @@
 class ProgramsManager {
   constructor() {
     this.config = {
-      columnIndices: [0, 1, 2, 3, 4],
-      dateCache: { start: null, end: null },
+      columnIndices: [0, 1, 2, 3, 4, 5],
       csrfToken: this.getCSRFToken(),
     };
+
+    this.allow_bulk_delete = true;
 
     this.selectors = {
       newProgramForm: "#new_program_form",
@@ -15,6 +16,7 @@ class ProgramsManager {
       deleteProgramModal: "#delete_program_modal",
       searchField: "#search_program_field",
       programsPageUrl: "#programs_page_url",
+      deleteMultipleModal: "#delete_all_programs",
 
       // Form fields
       programNames: "#program_names",
@@ -38,6 +40,9 @@ class ProgramsManager {
       filterClearBtn: "#programs_filter_clear",
       programEditBtn: "#program_edit_btn",
       programDeleteBtn: "#program_delete_btn",
+      selectAllCheckbox: "#select-all",
+      deleteSelectedBtn: "#delete_selected_btn",
+      confirmMultipleDelete: "#btn_confirm_multiple_delete",
     };
 
     this.table = null;
@@ -98,6 +103,20 @@ class ProgramsManager {
     `;
   }
 
+  /** Display alert messages */
+  displayAlert(formSms, isSuccess, message) {
+    const feedback = this.generateAlert(isSuccess, message);
+    formSms.html(feedback);
+
+    if (isSuccess) {
+      setTimeout(() => {
+        formSms.fadeOut(300, () => {
+          formSms.html("").show();
+        });
+      }, 5000);
+    }
+  }
+
   /**
    * Setup all event handlers
    */
@@ -107,6 +126,7 @@ class ProgramsManager {
     this.setupEditProgramForm();
     this.setupDeleteProgramForm();
     this.setupSearchAndFilters();
+    this.setupBulkDelete();
 
     // Toggle between Single and Multi programs form
     $(this.selectors.modeToggle).change((e) => {
@@ -167,8 +187,7 @@ class ProgramsManager {
       success: (response) => {
         submitBtn.html("Add").attr("type", "submit");
 
-        const feedback = this.generateAlert(response.success, response.sms);
-        formSms.html(feedback);
+        this.displayAlert(formSms, response.success, response.sms);
 
         if (response.success) {
           $(this.selectors.newProgramForm)[0].reset();
@@ -177,17 +196,17 @@ class ProgramsManager {
       },
       error: (xhr, status, error) => {
         submitBtn.html("Add").attr("type", "submit");
-        let feedback = this.generateAlert(false, "Server error.");
+        let message = "Server error.";
 
         if (status === "timeout") {
-          feedback = this.generateAlert(false, "Request timed out.");
+          message = "Request timed out.";
         } else if (xhr.status === 0) {
-          feedback = this.generateAlert(false, "No internet connection.");
+          message = "No internet connection.";
         } else {
           console.log("Server error:", xhr.status);
         }
 
-        formSms.html(feedback);
+        this.displayAlert(formSms, false, message);
       },
     });
   }
@@ -229,14 +248,13 @@ class ProgramsManager {
       },
       success: (response) => {
         submitBtn.html("Upload").attr("type", "submit");
-        const feedback = this.generateAlert(response.success, response.sms);
-        formSms.html(feedback);
+        this.displayAlert(formSms, response.success, response.sms);
         form[0].reset();
         this.table.draw();
       },
       error: () => {
         submitBtn.html("Upload").attr("type", "submit");
-        formSms.html(this.generateAlert(false, "Server error during upload."));
+        this.displayAlert(formSms, false, "Server error during upload.");
       },
     });
   }
@@ -287,8 +305,7 @@ class ProgramsManager {
       success: (response) => {
         submitBtn.html("Update").attr("type", "submit");
 
-        const feedback = this.generateAlert(response.success, response.sms);
-        formSms.html(feedback);
+        this.displayAlert(formSms, response.success, response.sms);
 
         if (response.success) {
           this.table.draw();
@@ -296,17 +313,17 @@ class ProgramsManager {
       },
       error: (xhr, status, error) => {
         submitBtn.html("Update").attr("type", "submit");
-        let feedback = this.generateAlert(false, "Server error.");
+        let message = "Server error.";
 
         if (status === "timeout") {
-          feedback = this.generateAlert(false, "Request timed out.");
+          message = "Request timed out.";
         } else if (xhr.status === 0) {
-          feedback = this.generateAlert(false, "No internet connection.");
+          message = "No internet connection.";
         } else {
           console.log("Server error:", xhr.status);
         }
 
-        formSms.html(feedback);
+        this.displayAlert(formSms, false, message);
       },
     });
   }
@@ -351,8 +368,7 @@ class ProgramsManager {
       success: (response) => {
         submitBtn.html("Yes").attr("type", "submit");
 
-        const feedback = this.generateAlert(response.success, response.sms);
-        formSms.html(feedback);
+        this.displayAlert(formSms, response.success, response.sms);
 
         if (response.success) {
           $(this.selectors.programDelId).val("");
@@ -361,17 +377,17 @@ class ProgramsManager {
       },
       error: (xhr, status, error) => {
         submitBtn.html("Yes").attr("type", "submit");
-        let feedback = this.generateAlert(false, "Server error.");
+        let message = "Server error.";
 
         if (status === "timeout") {
-          feedback = this.generateAlert(false, "Request timed out.");
+          message = "Request timed out.";
         } else if (xhr.status === 0) {
-          feedback = this.generateAlert(false, "No internet connection.");
+          message = "No internet connection.";
         } else {
           console.log("Server error:", xhr.status);
         }
 
-        formSms.html(feedback);
+        this.displayAlert(formSms, false, message);
       },
     });
   }
@@ -415,6 +431,7 @@ class ProgramsManager {
         headers: { "X-CSRFToken": this.config.csrfToken },
       },
       columns: [
+        { data: null },
         { data: "count" },
         { data: "name" },
         { data: "abbrev" },
@@ -432,19 +449,28 @@ class ProgramsManager {
       orderCellsTop: true,
       columnDefs: [
         {
-          targets: [0, 4],
+          targets: [0, 1, 5],
           orderable: false,
           className: "text-center",
         },
         {
-          targets: 4,
+          targets: 0,
+          createdCell: (cell, cellData, rowData, rowIndex, colIndex) => {
+            const checkbox = `<input type="checkbox" id="program-${rowData.id}" class="program-checkbox" value="${rowData.id}" />
+            <label for="program-${rowData.id}"></label>`;
+            $(cell).html(checkbox);
+            $(cell).css("width", "30px");
+          },
+        },
+        {
+          targets: 5,
           createdCell: (cell, cellData, rowData, rowIndex, colIndex) => {
             const btn = `<button class="btn btn-sm btn-primary text-white me-1" onclick="fill_edit_form(${rowIndex}, ${rowData.id}, 'edit')"><i class="fas fa-rotate"></i></button> <button class="btn btn-sm btn-accent text-white" onclick="fill_edit_form('', ${rowData.id}, 'del')"><i class="fas fa-trash"></i></button>`;
             $(cell).html(btn);
           },
         },
         {
-          targets: [1, 2, 3],
+          targets: [2, 3, 4],
           className: "text-start text-nowrap ellipsis",
         },
       ],
@@ -474,7 +500,7 @@ class ProgramsManager {
     const baseConfig = {
       className: "btn btn-extra text-white",
       title: "Programs - Meddy Stationery",
-      exportOptions: { columns: [0, 1, 2, 3] },
+      exportOptions: { columns: [1, 2, 3, 4] },
       action: this.getExportAction(),
     };
 
@@ -646,7 +672,7 @@ class ProgramsManager {
         );
         $(cell).addClass("bg-white");
 
-        if (colIdx === 0 || colIdx === 4) {
+        if (colIdx === 0 || colIdx === 1 || colIdx === 5) {
           cell.html("");
         } else {
           $(cell).html(
@@ -680,6 +706,118 @@ class ProgramsManager {
         .draw();
 
       $(this).focus()[0].setSelectionRange(cursorPosition, cursorPosition);
+    });
+  }
+
+  /**
+   * Setup bulk delete functionality
+   */
+  setupBulkDelete() {
+    // Select all checkbox
+    $(document).on("change", this.selectors.selectAllCheckbox, () => {
+      const isChecked = $(this.selectors.selectAllCheckbox).is(":checked");
+      $(".program-checkbox").prop("checked", isChecked);
+      this.toggleDeleteButton();
+    });
+
+    // Individual checkbox
+    $(document).on("change", ".program-checkbox", () => {
+      const total = $(".program-checkbox").length;
+      const checked = $(".program-checkbox:checked").length;
+      $(this.selectors.selectAllCheckbox).prop("checked", total === checked);
+      this.toggleDeleteButton();
+    });
+
+    // Open modal button
+    $(this.selectors.deleteSelectedBtn).on("click", () => {
+      const checkedCount = $(".program-checkbox:checked").length;
+      let sms = `<i class="fas fa-warning" style="font-size:40px"></i><br>Are you sure you want to delete all programs?<br>This cannot be undone.`;
+      if (checkedCount > 0)
+        sms = `<i class="fas fa-warning" style="font-size:40px"></i><br>Are you sure you want to delete ${checkedCount} programs?<br>This cannot be undone.`;
+      $(this.selectors.deleteMultipleModal).find(".warningTxt").html(sms);
+      $(this.selectors.deleteMultipleModal).modal("show");
+    });
+
+    // Confirm deleting multiple/all
+    $(this.selectors.confirmMultipleDelete).on("click", () => {
+      this.handleBulkDelete();
+    });
+  }
+
+  /**
+   * Toggle delete button state
+   */
+  toggleDeleteButton() {
+    const checkedCount = $(".program-checkbox:checked").length;
+    const $btn = $(this.selectors.deleteSelectedBtn);
+
+    $btn.toggleClass("disabled-btn", checkedCount === 0);
+
+    if (checkedCount > 0) {
+      $btn.html(`<i class="fas fa-trash"></i> (${checkedCount})`);
+    } else {
+      $btn.html('<i class="fas fa-trash"></i>');
+    }
+  }
+
+  /**
+   * Handle bulk delete
+   */
+  handleBulkDelete() {
+    if (this.allow_bulk_delete === false) return;
+
+    this.allow_bulk_delete = false;
+    const selectedIds = $(".program-checkbox:checked")
+      .map(function () {
+        return Number($(this).val());
+      })
+      .get();
+
+    const form = $(this.selectors.deleteProgramForm);
+    const formSms = $(this.selectors.deleteMultipleModal).find(
+      ".modal-body .formsms",
+    );
+    const submitBtn = $(this.selectors.confirmMultipleDelete);
+    const checkedCount = $(".program-checkbox:checked").length;
+    const deleteType = checkedCount === 0 ? "all" : "multiple";
+    const formData = new FormData();
+    formData.append("programs_list", selectedIds);
+    formData.append("delete_type", deleteType);
+
+    $.ajax({
+      type: "POST",
+      url: form.attr("action"),
+      data: formData,
+      dataType: "json",
+      contentType: false,
+      processData: false,
+      headers: { "X-CSRFToken": this.config.csrfToken },
+      beforeSend: () => {
+        submitBtn.html("<i class='fas fa-spinner fa-pulse'></i>");
+      },
+      success: (response) => {
+        this.allow_bulk_delete = true;
+        submitBtn.html("Delete");
+        $(".program-checkbox").prop("checked", false);
+        this.toggleDeleteButton();
+        this.displayAlert(formSms, response.success, response.sms);
+        if (response.success) this.table.draw();
+      },
+      error: (xhr, status, error) => {
+        this.allow_bulk_delete = true;
+        submitBtn.html("Delete");
+        let message = "Server error.";
+
+        if (status === "timeout") {
+          message = "Request timed out.";
+        } else if (xhr.status === 0) {
+          message = "No internet connection.";
+        } else {
+          console.log("Server error:", xhr.status);
+        }
+
+        this.displayAlert(formSms, false, message);
+      },
     });
   }
 }

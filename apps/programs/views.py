@@ -217,17 +217,51 @@ class ProgramService:
                 ])
 
             success = created_count > 0 and len(failed) == 0
-            Activity.objects.create(
-                categ="program",
-                title="Multiple programs added",
-                maelezo=f"{created_count} programs has been registered"
-                )
+            
+            if created_count > 0:
+                Activity.objects.create(
+                    categ="program",
+                    title="Multiple programs added",
+                    maelezo=f"{created_count} programs has been registered"
+                    )
+                
             return {'success': success, 'sms': sms}
 
         except Exception as e:
             logger.exception("Program import failed")
             return {'success': False, 'sms': f'Error processing file: {str(e)}'}
 
+    @staticmethod
+    def delete_multiple(data: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            programs = data.get("programs_list", "")
+            programs_list = [int(x) for x in programs.split(",") if x.strip()]
+            delete_type = data.get("delete_type")
+            
+            if delete_type == "all":
+                get_all = Program.objects.all()
+                if len(get_all) == 0:
+                    return {"success": False, "sms": "No programs available to delete."}
+                
+                get_all.delete()
+                Activity.objects.create(
+                    categ="program", title="All programs deleted",
+                    maelezo="All programs have been erased from system"
+                    )
+                return {"success": True, "sms": "All programs deleted successfully."}
+            
+            for prog in programs_list:
+                Program.objects.filter(id=prog).delete()
+            Activity.objects.create(
+                categ="program", title="Multiple programs deleted",
+                maelezo=f"{len(programs_list)} programs have been deleted from system"
+                )
+            return {"success": True, "sms": f"{len(programs_list)} programs deleted successfully."}
+                
+        except Exception as e:
+            logger.exception("Program delete failed")
+            return {"success": False, "sms": "Operation failed."}
+        
 
 # =============================================================================
 # Views
@@ -307,9 +341,12 @@ def programs_actions(request: HttpRequest) -> JsonResponse:
     post_data = request.POST
     prog_id = post_data.get("program_id")
     delete_id = post_data.get("delete_id")
+    delete_type = post_data.get("delete_type")
 
     if delete_id:
         return JsonResponse(ProgramService.delete_by_id(delete_id))
     if prog_id:
         return JsonResponse(ProgramService.update_from_post(int(prog_id), post_data))
+    if delete_type:
+        return JsonResponse(ProgramService.delete_multiple(post_data))
     return JsonResponse(ProgramService.create_from_post(post_data))

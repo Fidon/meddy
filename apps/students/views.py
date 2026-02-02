@@ -241,16 +241,102 @@ class StudentService:
                 ])
 
             success = created_count > 0 and len(failed) == 0
-            Activity.objects.create(
-                categ="student",
-                title="Multiple students added",
-                maelezo=f"{created_count} students has been registered"
-                )
+            
+            if created_count > 0:
+                Activity.objects.create(
+                    categ="student",
+                    title="Multiple students added",
+                    maelezo=f"{created_count} students has been registered"
+                    )
+                
             return {'success': success, 'sms': sms}
 
         except Exception as e:
             logger.exception("Students import failed")
             return {'success': False, 'sms': f'Error processing file: {str(e)}'}
+    
+    @staticmethod
+    def delete_multiple(data: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            stds = data.get("students_list", "")
+            students_list = [int(x) for x in stds.split(",") if x.strip()]
+            delete_type = data.get("delete_type")
+            
+            if delete_type == "all":
+                get_all = Student.objects.all()
+                if len(get_all) == 0:
+                    return {"success": False, "sms": "No students available to delete."}
+                
+                get_all.delete()
+                Activity.objects.create(
+                    categ="student", title="All students deleted",
+                    maelezo="All students have been erased from system"
+                    )
+                return {"success": True, "sms": "All students deleted successfully."}
+            
+            for st in students_list:
+                Student.objects.filter(id=st).delete()
+            Activity.objects.create(
+                categ="student", title="Multiple students deleted",
+                maelezo=f"{len(students_list)} students have been deleted from system"
+                )
+            return {"success": True, "sms": f"{len(students_list)} students deleted successfully."}
+                
+        except Exception as e:
+            logger.exception("Student delete failed")
+            return {"success": False, "sms": "Operation failed."}
+    
+    @staticmethod
+    def transfer_program(data: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            prog_start = data.get("prog_change_start")
+            prog_end = data.get("prog_change_end")
+
+            # Validate that both values are provided
+            if prog_start is None or prog_end is None or prog_start == "" or prog_end == "":
+                return {"success": False, "sms": "Both programs must be selected"}
+            
+            # Convert to integers and validate
+            try:
+                prog_start_id  = int(prog_start)
+                prog_end_id  = int(prog_end)
+            except (ValueError, TypeError):
+                return {"success": False, "sms": "Invalid program values"}
+            
+            # Check if they're the same
+            if prog_start_id == prog_end_id:
+                return {"success": False, "sms": "Please select different programs"}
+            
+            # Handle start program (0 means null/no program)
+            if prog_start_id == 0:
+                startProg = None
+                studentsList = Student.objects.filter(program__isnull=True)
+            else:
+                startProg = Program.objects.filter(id=prog_start_id).first()
+                if not startProg:
+                    return {"success": False, "sms": "Start program not found"}
+                studentsList = Student.objects.filter(program=startProg)
+
+            # Handle end program (0 means null/no program)
+            if prog_end_id == 0:
+                endProg = None
+            else:
+                endProg = Program.objects.filter(id=prog_end_id).first()
+                if not endProg:
+                    return {"success": False, "sms": "End program not found"}
+
+            # transfer students
+            students_updated = studentsList.update(program=endProg)
+
+            Activity.objects.create(
+                categ="student", title="Multiple students transfered",
+                maelezo=f"{students_updated} students have been transfered to new program"
+                )
+            return {"success": True, "sms": f"{students_updated} students transfered successfully."}
+                
+        except Exception as e:
+            logger.exception("Student transfer failed")
+            return {"success": False, "sms": "Operation failed."}
 
 
 # =============================================================================
@@ -336,9 +422,15 @@ def students_actions(request: HttpRequest) -> JsonResponse:
     post_data = request.POST
     student_id = post_data.get("student_id")
     delete_id = post_data.get("delete_id")
+    delete_type = post_data.get("delete_type")
+    prog_transfer = post_data.get("prog_change_start")
 
     if delete_id:
         return JsonResponse(StudentService.delete_by_id(delete_id))
     if student_id:
         return JsonResponse(StudentService.update_from_post(int(student_id), post_data))
+    if delete_type:
+        return JsonResponse(StudentService.delete_multiple(post_data))
+    if prog_transfer:
+        return JsonResponse(StudentService.transfer_program(post_data))
     return JsonResponse(StudentService.create_from_post(post_data))

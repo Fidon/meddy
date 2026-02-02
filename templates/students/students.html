@@ -12,6 +12,8 @@
   <div class="search-box input-group w-100 float-start">
     <input type="text" class="form-control" id="search_student_field" placeholder="Search students.." autocomplete="off" />
     <button type="button" class="btn btn-charcoal text-white ms-1" id="students_filter_clear" title="Clear filters"><i class="fas fa-refresh"></i></button>
+    <button type="button" class="btn btn-danger ms-1 disabled-btn" id="delete_selected_btn" title="Delete students"><i class="fas fa-trash"></i></button>
+    <button type="button" class="btn btn-secondary ms-1" title="Transfer program" data-bs-toggle="offcanvas" data-bs-target="#change_program_canvas"><i class="fas fa-right-left"></i></button>
     <button type="button" class="btn btn-primary text-white ms-1" title="New student" data-bs-toggle="offcanvas" data-bs-target="#new_student_canvas"><i class="fas fa-plus-circle"></i></button>
   </div>
 
@@ -20,6 +22,10 @@
       <table class="table table-striped table-hover" id="students_table">
         <thead>
           <tr>
+            <th>
+              <input type="checkbox" id="select-all" class="select-all-checkbox" />
+              <label for="select-all"></label>
+            </th>
             <th>S/N</th>
             <th>Student Name</th>
             <th>RegNumber</th>
@@ -142,6 +148,73 @@
         </div>
       </form>
     </div>
+  </div>
+
+  <!-- Delete multiple students -->
+  <div class="modal fade" id="delete_all_student">
+    <div class="modal-dialog">
+      <form class="modal-content">
+        <div class="modal-header bg-accent text-white py-4">
+          <h5 class="modal-title">Delete multiple students..</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body bg-white text-charcoal">
+          <div class="formsms alert w-100 float-start py-2 my-1"></div>
+          <div class="form-floating d-block w-100 float-start mb-2">
+            <h5 class="warningTxt d-block w-100 text-center text-danger py-5"></h5>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-success d-inline-block me-3" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger d-inline-block" id="btn_confirm_multiple_delete">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% comment %} Change student program {% endcomment %}
+  <div class="offcanvas offcanvas-start" id="change_program_canvas">
+      <div class="offcanvas-header bg-accent py-4">
+        <h5 class="offcanvas-title text-white">Transfer students program..</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body bg-white text-charcoal">
+        <form class="d-block w-100 float-start" id="change_program_form" action="{% url 'students_actions' %}" autocomplete="off">
+          <div class="formsms w-100 float-start my-1 text-start"></div>
+
+          <div class="form-floating d-block w-100 float-start mb-2">
+            <p class="d-block w-100 text-muted text-center px-1">
+              <i class="fas fa-info-circle text-warning" style="font-size:25px"></i><br>Note that you're about to transfer multiple students from one program to another or none.
+            </p>
+          </div>
+          <div class="form-floating d-block w-100 float-start my-2">
+              <select id="change_program_start" class="form-select">
+                <option value="">--select/search--</option>
+                <option value="0">No program</option>
+                {% for program in programs %}
+                  <option value="{{ program.id }}">{{program.abbrev}}: {{ program.name }}</option>
+                {% endfor %}
+              </select>
+              <label for="change_program_start" class="form-label">Select start program</label>
+            </div>
+
+            <div class="form-floating d-block w-100 float-start my-2">
+              <select id="change_program_end" class="form-select">
+                <option value="">--select/search--</option>
+                <option value="0">No program</option>
+                {% for program in programs %}
+                  <option value="{{ program.id }}">{{program.abbrev}}: {{ program.name }}</option>
+                {% endfor %}
+              </select>
+              <label for="change_program_end" class="form-label">Select end program</label>
+            </div>
+
+          <div class="form-floating d-block w-100 float-start my-3 text-end">
+            <button type="button" class="btn btn-accent text-white d-inline-block me-2" data-bs-dismiss="offcanvas">Cancel</button>
+            <button type="submit" class="btn btn-success d-inline-block" id="program_change_btn">Transfer</button>
+          </div>
+        </form>
+      </div>
   </div>
 
   <input type="hidden" id="students_page_url" value="{% url 'students_page' %}">

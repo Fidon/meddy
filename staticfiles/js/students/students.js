@@ -1,21 +1,27 @@
 class StudentsManager {
   constructor() {
     this.config = {
-      columnIndices: [0, 1, 2, 3, 4],
+      columnIndices: [0, 1, 2, 3, 4, 5],
       dateCache: { start: null, end: null },
       csrfToken: this.getCSRFToken(),
     };
 
+    this.allow_bulk_delete = true;
+
     this.selectors = {
       newStudentForm: "#new_student_form",
+      excelStudentForm: "#excel_students_form",
+      programChangeForm: "#change_program_form",
       editStudentForm: "#edit_student_form",
       deleteStudentForm: "#del_student_form",
       studentsTable: "#students_table",
       updateStudentCanvas: "#edit_student_canvas",
+      changeProgramCanvas: "#change_program_canvas",
       newStudentCanvas: "#new_student_canvas",
       deleteStudentModal: "#delete_student_modal",
       searchField: "#search_student_field",
       studentsPageUrl: "#students_page_url",
+      deleteMultipleModal: "#delete_all_student",
 
       // Form fields
       studentNames: "#student_fullname",
@@ -26,9 +32,9 @@ class StudentsManager {
       studentEditProgram: "#student_edit_program",
       studentId: "#edit_student_id",
       studentDelId: "#student_del_id",
+      changeProgStart: "#change_program_start",
+      changeProgEnd: "#change_program_end",
 
-      excelStudentForm: "#excel_students_form",
-      excelStudentBtn: "#excel_students_btn",
       excelFile: "#students_excel_file",
       modeToggle: 'input[name="entry_mode"]',
       singleContainer: "#single_entry_container",
@@ -36,9 +42,14 @@ class StudentsManager {
 
       // Buttons
       newStudentBtn: "#new_student_btn",
+      excelStudentBtn: "#excel_students_btn",
       filterClearBtn: "#students_filter_clear",
       studentEditBtn: "#student_edit_btn",
       studentDeleteBtn: "#student_delete_btn",
+      selectAllCheckbox: "#select-all",
+      deleteSelectedBtn: "#delete_selected_btn",
+      confirmMultipleDelete: "#btn_confirm_multiple_delete",
+      programChangeBtn: "#program_change_btn",
     };
 
     this.table = null;
@@ -68,39 +79,58 @@ class StudentsManager {
    * Initialize searchable selects
    */
   initializeSearchableSelects() {
-    // Initialize for new student form when offcanvas is shown
-    const newStudentOffcanvas = document.querySelector(
-      this.selectors.newStudentCanvas,
-    );
+    const offcanvasConfigs = [
+      {
+        offcanvas: this.selectors.newStudentCanvas,
+        select: this.selectors.studentProgram,
+        options: {
+          placeholder: "Search program...",
+          allowClear: true,
+          noResultsText: "No program found",
+        },
+      },
+      {
+        offcanvas: this.selectors.updateStudentCanvas,
+        select: this.selectors.studentEditProgram,
+        options: {
+          placeholder: "Search program...",
+          allowClear: true,
+          noResultsText: "No program found",
+        },
+      },
+      {
+        offcanvas: this.selectors.changeProgramCanvas,
+        select: this.selectors.changeProgStart,
+        options: {
+          placeholder: "Search program...",
+          allowClear: true,
+          noResultsText: "No program found",
+        },
+      },
+      {
+        offcanvas: this.selectors.changeProgramCanvas,
+        select: this.selectors.changeProgEnd,
+        options: {
+          placeholder: "Search program...",
+          allowClear: true,
+          noResultsText: "No program found",
+        },
+      },
+    ];
 
-    if (newStudentOffcanvas) {
-      newStudentOffcanvas.addEventListener("shown.bs.offcanvas", () => {
-        if (!$(this.selectors.studentProgram).data("searchableSelect")) {
-          $(this.selectors.studentProgram).searchableSelect({
-            placeholder: "Search program...",
-            allowClear: true,
-            noResultsText: "No program found",
-          });
-        }
-      });
-    }
+    offcanvasConfigs.forEach(({ offcanvas, select, options }) => {
+      const offcanvasElement = document.querySelector(offcanvas);
 
-    // Initialize for edit student form when offcanvas is shown
-    const editStudentOffcanvas = document.querySelector(
-      this.selectors.updateStudentCanvas,
-    );
+      if (offcanvasElement) {
+        offcanvasElement.addEventListener("shown.bs.offcanvas", () => {
+          const $select = $(select);
 
-    if (editStudentOffcanvas) {
-      editStudentOffcanvas.addEventListener("shown.bs.offcanvas", () => {
-        if (!$(this.selectors.studentEditProgram).data("searchableSelect")) {
-          $(this.selectors.studentEditProgram).searchableSelect({
-            placeholder: "Search program...",
-            allowClear: true,
-            noResultsText: "No program found",
-          });
-        }
-      });
-    }
+          if (!$select.data("searchableSelect")) {
+            $select.searchableSelect(options);
+          }
+        });
+      }
+    });
   }
 
   /**
@@ -111,10 +141,10 @@ class StudentsManager {
       const row = $(
         `${this.selectors.studentsTable} tbody tr:nth-child(${rowIndex + 1})`,
       );
-      const fullname = $("td:nth-child(2)", row).text();
-      const regnumber = $("td:nth-child(3)", row).text();
+      const fullname = $("td:nth-child(3)", row).text();
+      const regnumber = $("td:nth-child(4)", row).text();
 
-      const programClassName = $("td:nth-child(4)", row).attr("class");
+      const programClassName = $("td:nth-child(5)", row).attr("class");
       if (programClassName && programClassName.includes("prog_")) {
         const programId = programClassName.split("prog_")[1];
         if (programId) {
@@ -149,6 +179,20 @@ class StudentsManager {
     `;
   }
 
+  /** Display alert messages */
+  displayAlert(formSms, isSuccess, message) {
+    const feedback = this.generateAlert(isSuccess, message);
+    formSms.html(feedback);
+
+    if (isSuccess) {
+      setTimeout(() => {
+        formSms.fadeOut(300, () => {
+          formSms.html("").show();
+        });
+      }, 3000);
+    }
+  }
+
   /**
    * Setup all event handlers
    */
@@ -156,10 +200,12 @@ class StudentsManager {
     this.setupNewStudentForm();
     this.setupExcelStudentForm();
     this.setupEditStudentForm();
+    this.setupProgramChangeForm();
     this.setupDeleteStudentForm();
     this.setupSearchAndFilters();
+    this.setupBulkDelete();
 
-    // Toggle between Single and Multi facilitators form
+    // Toggle between Single and Multi students form
     $(this.selectors.modeToggle).change((e) => {
       if (e.target.id === "mode_single") {
         $(this.selectors.singleContainer).removeClass("d-none");
@@ -195,9 +241,9 @@ class StudentsManager {
    */
   handleNewStudentSubmit(form, submitBtn, formSms) {
     const formData = new FormData();
-    formData.append("fullname", $.trim($(this.selectors.studentNames).val()));
-    formData.append("regnumber", $.trim($(this.selectors.studentCode).val()));
-    formData.append("program", $.trim($(this.selectors.studentProgram).val()));
+    formData.append("fullname", $(this.selectors.studentNames).val()).trim();
+    formData.append("regnumber", $(this.selectors.studentCode).val()).trim();
+    formData.append("program", $(this.selectors.studentProgram).val());
 
     $.ajax({
       type: "POST",
@@ -215,8 +261,7 @@ class StudentsManager {
       success: (response) => {
         submitBtn.html("Add").attr("type", "submit");
 
-        const feedback = this.generateAlert(response.success, response.sms);
-        formSms.html(feedback);
+        this.displayAlert(formSms, response.success, response.sms);
 
         if (response.success) {
           $(this.selectors.newStudentForm)[0].reset();
@@ -226,17 +271,17 @@ class StudentsManager {
       },
       error: (xhr, status, error) => {
         submitBtn.html("Add").attr("type", "submit");
-        let feedback = this.generateAlert(false, "Server error.");
+        let message = "Server error.";
 
         if (status === "timeout") {
-          feedback = this.generateAlert(false, "Request timed out.");
+          message = "Request timed out.";
         } else if (xhr.status === 0) {
-          feedback = this.generateAlert(false, "No internet connection.");
+          message = "No internet connection.";
         } else {
           console.log("Server error:", xhr.status);
         }
 
-        formSms.html(feedback);
+        this.displayAlert(formSms, false, message);
       },
     });
   }
@@ -278,14 +323,13 @@ class StudentsManager {
       },
       success: (response) => {
         submitBtn.html("Upload").attr("type", "submit");
-        const feedback = this.generateAlert(response.success, response.sms);
-        formSms.html(feedback);
+        this.displayAlert(formSms, response.success, response.sms);
         form[0].reset();
         this.table.draw();
       },
       error: () => {
         submitBtn.html("Upload").attr("type", "submit");
-        formSms.html(this.generateAlert(false, "Server error during upload."));
+        this.displayAlert(formSms, false, "Server error during upload.");
       },
     });
   }
@@ -312,16 +356,13 @@ class StudentsManager {
     formData.append("student_id", $(this.selectors.studentId).val());
     formData.append(
       "fullname",
-      $.trim($(this.selectors.studentEditNames).val()),
+      $(this.selectors.studentEditNames).val().trim(),
     );
     formData.append(
       "regnumber",
-      $.trim($(this.selectors.studentEditCode).val()),
+      $(this.selectors.studentEditCode).val().trim(),
     );
-    formData.append(
-      "program",
-      $.trim($(this.selectors.studentEditProgram).val()),
-    );
+    formData.append("program", $(this.selectors.studentEditProgram).val());
 
     $.ajax({
       type: "POST",
@@ -338,27 +379,101 @@ class StudentsManager {
       },
       success: (response) => {
         submitBtn.html("Update").attr("type", "submit");
-
-        const feedback = this.generateAlert(response.success, response.sms);
-        formSms.html(feedback);
-
-        if (response.success) {
-          this.table.draw();
-        }
+        this.displayAlert(formSms, response.success, response.sms);
+        if (response.success) this.table.draw();
       },
       error: (xhr, status, error) => {
         submitBtn.html("Update").attr("type", "submit");
-        let feedback = this.generateAlert(false, "Server error.");
+        let message = "Server error.";
 
         if (status === "timeout") {
-          feedback = this.generateAlert(false, "Request timed out.");
+          message = "Request timed out.";
         } else if (xhr.status === 0) {
-          feedback = this.generateAlert(false, "No internet connection.");
+          message = "No internet connection.";
         } else {
           console.log("Server error:", xhr.status);
         }
 
-        formSms.html(feedback);
+        this.displayAlert(formSms, false, message);
+      },
+    });
+  }
+
+  /**
+   * Setup program transfer form
+   */
+  setupProgramChangeForm() {
+    $(this.selectors.programChangeForm).submit((e) => {
+      e.preventDefault();
+      const formSms = $(`${this.selectors.programChangeForm} .formsms`);
+      const submitBtn = $(this.selectors.programChangeBtn);
+
+      this.handleProgramChangeSubmit(submitBtn, formSms);
+    });
+  }
+
+  /**
+   * Handle program transfer form submission
+   */
+  handleProgramChangeSubmit(submitBtn, formSms) {
+    const progStart = $(this.selectors.changeProgStart).val();
+    const progEnd = $(this.selectors.changeProgEnd).val();
+
+    if (progStart == "" || progEnd == "") {
+      this.displayAlert(
+        formSms,
+        false,
+        "Please select programs in both fields.",
+      );
+      return;
+    }
+
+    if (parseInt(progStart) === parseInt(progEnd)) {
+      this.displayAlert(
+        formSms,
+        false,
+        "Please select two different programs.",
+      );
+      return;
+    }
+
+    const form = $(this.selectors.editStudentForm);
+    const formData = new FormData();
+    formData.append("prog_change_start", parseInt(progStart));
+    formData.append("prog_change_end", parseInt(progEnd));
+
+    $.ajax({
+      type: "POST",
+      url: form.attr("action"),
+      data: formData,
+      dataType: "json",
+      contentType: false,
+      processData: false,
+      headers: { "X-CSRFToken": this.config.csrfToken },
+      beforeSend: () => {
+        submitBtn
+          .html("<i class='fas fa-spinner fa-pulse'></i>")
+          .attr("type", "button");
+      },
+      success: (response) => {
+        submitBtn.html("Transfer").attr("type", "submit");
+        $(this.selectors.programChangeForm)[0].reset();
+        this.displayAlert(formSms, response.success, response.sms);
+        if (response.success) this.table.draw();
+      },
+      error: (xhr, status, error) => {
+        submitBtn.html("Transfer").attr("type", "submit");
+        let message = "Server error.";
+
+        if (status === "timeout") {
+          message = "Request timed out.";
+        } else if (xhr.status === 0) {
+          message = "No internet connection.";
+        } else {
+          console.log("Server error:", xhr.status);
+        }
+
+        this.displayAlert(formSms, false, message);
       },
     });
   }
@@ -403,8 +518,7 @@ class StudentsManager {
       success: (response) => {
         submitBtn.html("Yes").attr("type", "submit");
 
-        const feedback = this.generateAlert(response.success, response.sms);
-        formSms.html(feedback);
+        this.displayAlert(formSms, response.success, response.sms);
 
         if (response.success) {
           $(this.selectors.studentDelId).val("");
@@ -413,17 +527,17 @@ class StudentsManager {
       },
       error: (xhr, status, error) => {
         submitBtn.html("Yes").attr("type", "submit");
-        let feedback = this.generateAlert(false, "Server error.");
+        let message = "Server error.";
 
         if (status === "timeout") {
-          feedback = this.generateAlert(false, "Request timed out.");
+          message = "Request timed out.";
         } else if (xhr.status === 0) {
-          feedback = this.generateAlert(false, "No internet connection.");
+          message = "No internet connection.";
         } else {
           console.log("Server error:", xhr.status);
         }
 
-        formSms.html(feedback);
+        this.displayAlert(formSms, false, message);
       },
     });
   }
@@ -467,6 +581,7 @@ class StudentsManager {
         headers: { "X-CSRFToken": this.config.csrfToken },
       },
       columns: [
+        { data: null },
         { data: "count" },
         { data: "fullname" },
         { data: "regnumber" },
@@ -484,26 +599,36 @@ class StudentsManager {
       orderCellsTop: true,
       columnDefs: [
         {
-          targets: [0, 4],
+          targets: [0, 1, 5],
           orderable: false,
           className: "text-center",
         },
         {
-          targets: 4,
+          targets: 0,
           createdCell: (cell, cellData, rowData, rowIndex, colIndex) => {
-            const btn = `<button class="btn btn-sm btn-primary text-white me-1" onclick="fill_edit_form(${rowIndex}, ${rowData.id}, 'edit')"><i class="fas fa-rotate"></i></button> <button class="btn btn-sm btn-accent text-white" onclick="fill_edit_form('', ${rowData.id}, 'del')"><i class="fas fa-trash"></i></button>`;
+            const checkbox = `<input type="checkbox" id="student-${rowData.id}" class="student-checkbox" value="${rowData.id}" />
+            <label for="student-${rowData.id}"></label>`;
+            $(cell).html(checkbox);
+            $(cell).css("width", "30px");
+          },
+        },
+        {
+          targets: 5,
+          createdCell: (cell, cellData, rowData, rowIndex, colIndex) => {
+            const btn = `<button class="btn btn-sm btn-primary text-white me-1" onclick="fill_edit_form(${rowIndex}, ${rowData.id}, 'edit')"><i class="fas fa-rotate"></i></button>
+            <button class="btn btn-sm btn-accent text-white" onclick="fill_edit_form('', ${rowData.id}, 'del')"><i class="fas fa-trash"></i></button>`;
             $(cell).html(btn);
           },
         },
         {
-          targets: 3,
+          targets: 4,
           createdCell: (cell, cellData, rowData, rowIndex, colIndex) => {
             $(cell).html(rowData.program);
             $(cell).addClass("prog_" + rowData.program_id);
           },
         },
         {
-          targets: [1, 2, 3],
+          targets: [2, 3, 4],
           className: "text-start text-nowrap ellipsis",
         },
       ],
@@ -533,7 +658,7 @@ class StudentsManager {
     const baseConfig = {
       className: "btn btn-extra text-white",
       title: "Students - Meddy Stationery",
-      exportOptions: { columns: [0, 1, 2, 3] },
+      exportOptions: { columns: [1, 2, 3, 4] },
       action: this.getExportAction(),
     };
 
@@ -705,7 +830,7 @@ class StudentsManager {
         );
         $(cell).addClass("bg-white");
 
-        if (colIdx === 0 || colIdx === 4) {
+        if (colIdx === 0 || colIdx === 1 || colIdx === 5) {
           cell.html("");
         } else {
           $(cell).html(
@@ -739,6 +864,118 @@ class StudentsManager {
         .draw();
 
       $(this).focus()[0].setSelectionRange(cursorPosition, cursorPosition);
+    });
+  }
+
+  /**
+   * Setup bulk delete functionality
+   */
+  setupBulkDelete() {
+    // Select all checkbox
+    $(document).on("change", this.selectors.selectAllCheckbox, () => {
+      const isChecked = $(this.selectors.selectAllCheckbox).is(":checked");
+      $(".student-checkbox").prop("checked", isChecked);
+      this.toggleDeleteButton();
+    });
+
+    // Individual checkbox
+    $(document).on("change", ".student-checkbox", () => {
+      const total = $(".student-checkbox").length;
+      const checked = $(".student-checkbox:checked").length;
+      $(this.selectors.selectAllCheckbox).prop("checked", total === checked);
+      this.toggleDeleteButton();
+    });
+
+    // Open modal button
+    $(this.selectors.deleteSelectedBtn).on("click", () => {
+      const checkedCount = $(".student-checkbox:checked").length;
+      let sms = `<i class="fas fa-warning" style="font-size:40px"></i><br>Are you sure you want to delete all students?<br>This cannot be undone.`;
+      if (checkedCount > 0)
+        sms = `<i class="fas fa-warning" style="font-size:40px"></i><br>Are you sure you want to delete ${checkedCount} students?<br>This cannot be undone.`;
+      $(this.selectors.deleteMultipleModal).find(".warningTxt").html(sms);
+      $(this.selectors.deleteMultipleModal).modal("show");
+    });
+
+    // Confirm deleting multiple/all
+    $(this.selectors.confirmMultipleDelete).on("click", () => {
+      this.handleBulkDelete();
+    });
+  }
+
+  /**
+   * Toggle delete button state
+   */
+  toggleDeleteButton() {
+    const checkedCount = $(".student-checkbox:checked").length;
+    const $btn = $(this.selectors.deleteSelectedBtn);
+
+    $btn.toggleClass("disabled-btn", checkedCount === 0);
+
+    if (checkedCount > 0) {
+      $btn.html(`<i class="fas fa-trash"></i> (${checkedCount})`);
+    } else {
+      $btn.html('<i class="fas fa-trash"></i>');
+    }
+  }
+
+  /**
+   * Handle bulk delete
+   */
+  handleBulkDelete() {
+    if (this.allow_bulk_delete === false) return;
+
+    this.allow_bulk_delete = false;
+    const selectedIds = $(".student-checkbox:checked")
+      .map(function () {
+        return Number($(this).val());
+      })
+      .get();
+
+    const form = $(this.selectors.deleteStudentForm);
+    const formSms = $(this.selectors.deleteMultipleModal).find(
+      ".modal-body .formsms",
+    );
+    const submitBtn = $(this.selectors.confirmMultipleDelete);
+    const checkedCount = $(".student-checkbox:checked").length;
+    const deleteType = checkedCount === 0 ? "all" : "multiple";
+    const formData = new FormData();
+    formData.append("students_list", selectedIds);
+    formData.append("delete_type", deleteType);
+
+    $.ajax({
+      type: "POST",
+      url: form.attr("action"),
+      data: formData,
+      dataType: "json",
+      contentType: false,
+      processData: false,
+      headers: { "X-CSRFToken": this.config.csrfToken },
+      beforeSend: () => {
+        submitBtn.html("<i class='fas fa-spinner fa-pulse'></i>");
+      },
+      success: (response) => {
+        this.allow_bulk_delete = true;
+        submitBtn.html("Delete");
+        $(".student-checkbox").prop("checked", false);
+        this.toggleDeleteButton();
+        this.displayAlert(formSms, response.success, response.sms);
+        if (response.success) this.table.draw();
+      },
+      error: (xhr, status, error) => {
+        this.allow_bulk_delete = true;
+        submitBtn.html("Delete");
+        let message = "Server error.";
+
+        if (status === "timeout") {
+          message = "Request timed out.";
+        } else if (xhr.status === 0) {
+          message = "No internet connection.";
+        } else {
+          console.log("Server error:", xhr.status);
+        }
+
+        this.displayAlert(formSms, false, message);
+      },
     });
   }
 }

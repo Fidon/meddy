@@ -2,15 +2,18 @@ from django.shortcuts import render
 from django.views.decorators.cache import never_cache
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpRequest, HttpResponse
-import logging
 from typing import Dict, Any
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q
+import logging
 
 from apps.programs.models import Program
 from apps.courses.models import Course
 from apps.students.models import Student
 from .models import Question, Page
+
+from datetime import datetime
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -283,6 +286,12 @@ def cover_page(request: HttpRequest) -> HttpResponse:
         'pages': pages_data['items'],
         'pages_pagination': pages_data['pagination'],
     }
+
+    current_dir = Path(__file__).parent
+    log_file = current_dir / 'coverpage_loads.txt'
+    timestamp = datetime.now().strftime('%d %b %Y - %H:%M:%S')
+    with open(log_file, 'a') as f:
+        f.write(f'{timestamp}\n')
     
     return render(request, 'stationery/cover.html', data)
 
