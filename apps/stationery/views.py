@@ -10,6 +10,7 @@ import logging
 from apps.programs.models import Program
 from apps.courses.models import Course
 from apps.students.models import Student
+from apps.dashboard.models import Activity
 from .models import Question, Page
 
 from datetime import datetime
@@ -35,6 +36,13 @@ class CrudServices:
                 return {"success": True, "sms": "Question saved successfully!"}
 
             Question.objects.create(content=question)
+
+            Activity.objects.create(
+                categ="student",
+                title="New question saved",
+                maelezo="One question has been added to the system"
+                )
+            
             return {"success": True, "sms": "Question saved successfully!"}
         except Exception as e:
             logger.exception("Failed to save")
@@ -69,6 +77,13 @@ class CrudServices:
                 streams=streams, students=students, program=prog,
                 course=course, question=quen, table=table
             )
+
+            Activity.objects.create(
+                categ="student",
+                title="New page saved",
+                maelezo="One page has been added to the system"
+                )
+            
             return {"success": True, "sms": "Page saved successfully!"}
         except Exception as e:
             logger.exception("Failed to save")
