@@ -241,8 +241,8 @@ class StudentsManager {
    */
   handleNewStudentSubmit(form, submitBtn, formSms) {
     const formData = new FormData();
-    formData.append("fullname", $(this.selectors.studentNames).val()).trim();
-    formData.append("regnumber", $(this.selectors.studentCode).val()).trim();
+    formData.append("fullname", $(this.selectors.studentNames).val().trim());
+    formData.append("regnumber", $(this.selectors.studentCode).val().trim());
     formData.append("program", $(this.selectors.studentProgram).val());
 
     $.ajax({

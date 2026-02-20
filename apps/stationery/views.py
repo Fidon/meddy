@@ -19,10 +19,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-# =============================================================================
 # CRUD Service
-# =============================================================================
-
 class CrudServices:
     @staticmethod
     def save_question(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -52,6 +49,7 @@ class CrudServices:
     def save_cover_page(data: Dict[str, Any]) -> Dict[str, Any]:
         try:
             task = data.get("task") or ""
+            title = data.get("title") or ""
             groupno = 0 if data.get("grpno") == "" else data.get("grpno")
             subdate = None if data.get("subdate") in ("", "N/A") else data.get("subdate")
             streams = data.get("streams")  or ""
@@ -75,7 +73,7 @@ class CrudServices:
             Page.objects.create(
                 task=task, groupno=groupno, submitdate=subdate,
                 streams=streams, students=students, program=prog,
-                course=course, question=quen, table=table
+                course=course, question=quen, table=table, title=title
             )
 
             Activity.objects.create(
@@ -215,10 +213,11 @@ class CrudServices:
             'pages': {
                 'model': Page,
                 'order_by': '-created_at',
-                'search_fields': ['task'],
+                'search_fields': ['task', 'title'],
                 'serializer': lambda obj: {
                     'id': obj.id,
-                    'task': obj.task
+                    'task': obj.task,
+                    'title': obj.title
                 }
             }
         }
@@ -302,12 +301,6 @@ def cover_page(request: HttpRequest) -> HttpResponse:
         'pages_pagination': pages_data['pagination'],
     }
 
-    current_dir = Path(__file__).parent
-    log_file = current_dir / 'coverpage_loads.txt'
-    timestamp = datetime.now().strftime('%d %b %Y - %H:%M:%S')
-    with open(log_file, 'a') as f:
-        f.write(f'{timestamp}\n')
-    
     return render(request, 'stationery/cover.html', data)
 
 @never_cache
@@ -330,4 +323,5 @@ def cover_page_actions(request: HttpRequest) -> JsonResponse:
         return JsonResponse(CrudServices.delete_page(pg_delete))
     if qn_delete:
         return JsonResponse(CrudServices.delete_question(qn_delete))
+    
     return JsonResponse(CrudServices.save_question(post_data))

@@ -157,7 +157,7 @@
                 {% if pages %}
                     {% for pg in pages %}
                         <div class="item">
-                            <span>{{ pg.task }}</span>
+                            <span title="{{pg.title}}">{{ pg.title }}</span>
                             <i class="fas fa-trash item-delete" data-pg="{{pg.id}}"></i>
                         </div>
                     {% endfor %}

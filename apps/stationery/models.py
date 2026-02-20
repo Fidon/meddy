@@ -18,6 +18,7 @@ class Question(models.Model):
 class Page(models.Model):
     id = models.AutoField(primary_key=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    title = models.CharField(max_length=255, db_index=True, null=True, blank=True)
     task = models.CharField(max_length=255, db_index=True)
     groupno = models.DecimalField(max_digits=3, decimal_places=0)
     submitdate = models.CharField(max_length=100, null=True, default=None)

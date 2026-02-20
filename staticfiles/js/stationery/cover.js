@@ -244,7 +244,7 @@ class CoverPageManager {
     pages.forEach((pg) => {
       html += `
                 <div class="item">
-                    <span>${pg.task}</span>
+                    <span title="${pg.title}">${pg.title}</span>
                     <i class="fas fa-trash item-delete" data-pg="${pg.id}"></i>
                 </div>`;
     });
@@ -262,6 +262,12 @@ class CoverPageManager {
   // Event Listeners
   setupEventListeners() {
     const self = this;
+
+    // Pre-populate submission date with current date
+    const $date_div = $(self.selectors.divSubmissionDate);
+    const $icon = $date_div.find("span").detach();
+    const $currentDate = self.formatDisplayDate(new Date());
+    $date_div.html($currentDate).append($icon);
 
     // Section accordion behavior
     $(".pagepannel .section-header").on("click", function () {
@@ -632,6 +638,9 @@ class CoverPageManager {
   }
 
   showQuestionEditor() {
+    $(this.selectors.richEditor).html("");
+    this.updateQuestionPreview();
+
     $(this.selectors.questionEditor).show();
     $(this.selectors.richEditor).focus();
     if (!$(this.selectors.divQuestion).parent().is(":visible")) {
@@ -818,11 +827,30 @@ class CoverPageManager {
       .text()
       .trim();
     const prog = $(this.selectors.divClass).attr("data-classname") || "";
+    const title =
+      prog +
+      ": " +
+      $(this.selectors.divCourse)
+        .clone()
+        .children()
+        .remove()
+        .end()
+        .text()
+        .trim() +
+      " - " +
+      $(this.selectors.divFacilitator)
+        .clone()
+        .children()
+        .remove()
+        .end()
+        .text()
+        .trim();
 
     const formData = new FormData();
     formData.append("task", task);
     formData.append("grpno", grpno);
     formData.append("subdate", subdate);
+    formData.append("title", title);
     formData.append("streams", [...this.selectedStreams]);
     formData.append("students", [...this.selectedStudents]);
     formData.append("prog", prog);
