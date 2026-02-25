@@ -20,6 +20,17 @@ class CoverPageManager {
       questionsList: ".item-list.questions",
       pagesList: ".item-list.pages",
 
+      pagesSection: "#savedPagesSection",
+      taskSection: "#taskSection",
+      groupNoSection: "#groupnoSection",
+      programSection: "#programSection",
+      streamSection: "#streamSection",
+      courseSection: "#courseSection",
+      studentSection: "#studentSection",
+      submissionSection: "#submissionDateSection",
+      signatureSection: "#signatureSection",
+      questionSection: "#questionSection",
+
       // Display elements
       divProgram: "#div_program .txt_content",
       divClass: "#div_class .txt_content",
@@ -423,6 +434,7 @@ class CoverPageManager {
 
     const isGroup = type === "group";
     const text = isGroup ? "GROUP ASSIGNMENT" : "INDIVIDUAL ASSIGNMENT";
+    const $groupNoSection = $(this.selectors.groupNoSection);
 
     const $icon = $(this.selectors.divTask).find("span").detach();
     $(this.selectors.divTask).text(text).append($icon);
@@ -431,10 +443,14 @@ class CoverPageManager {
       $(".body div.individual_assignment").slideUp(300);
       $(".table_div").slideDown(300);
       $(this.selectors.divGroupNumber).parent().slideDown(300);
+      $groupNoSection.slideDown(300);
+      $groupNoSection.find(".section-header").click();
     } else {
       $(".table_div").slideUp(300);
       $(".body div.individual_assignment").slideDown(300);
       $(this.selectors.divGroupNumber).parent().slideUp(300);
+      $groupNoSection.slideUp(300);
+      $(this.selectors.programSection).find(".section-header").click();
     }
   }
 
@@ -582,6 +598,7 @@ class CoverPageManager {
     if ($parentSection.hasClass("subdate")) {
       const $target = $("#div_submissiondate");
       isHide ? $target.slideUp(300) : $target.slideDown(300);
+      $(this.selectors.signatureSection).find(".section-header").click();
       return;
     }
 
@@ -614,6 +631,7 @@ class CoverPageManager {
         });
       }
     }
+    $(this.selectors.questionSection).find(".section-header").click();
   }
 
   toggleLogo() {
@@ -700,6 +718,7 @@ class CoverPageManager {
       this.updateProgram(name, abbrev);
       this.selectedStreams.clear();
       $(".pagepannel .stream-pill").removeClass("active");
+      $(this.selectors.streamSection).find(".section-header").click();
     } else if ($parent.hasClass("courses")) {
       const name = $item.find(".coursename").text();
       const code = $item.find(".coursecode").text();
@@ -707,6 +726,7 @@ class CoverPageManager {
       facil = facil === "None" ? "N/A" : facil;
       this.selectedCourse = parseInt($item.find(".coursecode").data("id"));
       this.updateCourse(name, code, facil);
+      $(this.selectors.studentSection).find(".section-header").click();
     } else if ($parent.hasClass("questions")) {
       $(this.selectors.richEditor).html($item.find("span").html());
       this.updateQuestionPreview();

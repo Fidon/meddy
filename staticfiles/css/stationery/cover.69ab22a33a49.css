@@ -22,7 +22,8 @@
   width: 100%;
   display: block;
   float: left;
-  padding: 40px 7px 15px 7px;
+  padding: 0;
+  padding-bottom: 25px;
 }
 
 .heading {
@@ -30,12 +31,11 @@
   width: 100%;
   height: auto;
   float: left;
-  margin-bottom: 25px;
+  margin-bottom: 10px;
 }
 .one_logo,
 .no_logo {
   display: none;
-  margin-bottom: 40px;
 }
 .heading .tpsc,
 .heading .nembo {
@@ -66,6 +66,7 @@
 }
 .one_logo .tpsc img {
   width: 150px;
+  margin-top: 15px;
 }
 .no_logo .tpsc {
   height: 50px;
