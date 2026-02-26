@@ -20,14 +20,10 @@ class CoverPageManager {
       questionsList: ".item-list.questions",
       pagesList: ".item-list.pages",
 
-      pagesSection: "#savedPagesSection",
-      taskSection: "#taskSection",
       groupNoSection: "#groupnoSection",
       programSection: "#programSection",
       streamSection: "#streamSection",
-      courseSection: "#courseSection",
       studentSection: "#studentSection",
-      submissionSection: "#submissionDateSection",
       signatureSection: "#signatureSection",
       questionSection: "#questionSection",
 
